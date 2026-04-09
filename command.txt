@@ -1,0 +1,8 @@
+// go into the trt_speedtest dir
+// run using uvicorn api.app:app --reload --port 8080
+// to run the docker server 
+>>   docker run --gpus all --rm `                  
+>>   -p 8000:8000 -p 8001:8001 -p 8002:8002 `
+>>   -v C:\Users\vr740\Documents\SEAI\trt_speedtest\triton_models:/models `
+>>   nvcr.io/nvidia/tritonserver:25.01-py3 `
+>>   tritonserver --model-repository=/models
