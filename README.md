@@ -1,9 +1,12 @@
-# Chest X-Ray Inference Accelerator
-### TensorRT + Triton Inference Server | ResNet-50 | RTX 3070
+# VeritasXR — Chest X-Ray Inference with Clinical Uncertainty
+### Dual-Path Architecture + TensorRT + Triton Inference Server | RTX 3070 Ti
 
-A complete deep learning inference pipeline that demonstrates **13x speedup** over standard PyTorch
-by combining NVIDIA TensorRT optimization with Triton Inference Server deployment.
-Built on real medical data — the Kaggle Chest X-Ray (Pneumonia) dataset.
+A production-grade deep learning inference pipeline for pneumonia detection from chest X-rays.
+VeritasXR is a custom-designed dual-pathway CNN that learns local and global features in parallel,
+with a learned uncertainty head for clinical triage — deployed on NVIDIA Triton Inference Server.
+
+> *"We propose a dual-pathway architecture where local and global features are learned in parallel,
+> with inter-path disagreement used as an intrinsic uncertainty signal for clinical decision support."*
 
 ---
 
@@ -13,9 +16,56 @@ Built on real medical data — the Kaggle Chest X-Ray (Pneumonia) dataset.
 |---|---|---|---|
 | PyTorch FP32 (baseline) | 18.1ms | 55 img/s | 1x |
 | TensorRT FP16 | 2.2ms | 447 img/s | 8.1x |
-| Triton + TensorRT | 1.4ms | 648 img/s | **13x** |
+| Triton + ONNX (VeritasXR) | 1.4ms | 648 img/s | **13x** |
 
 **Model accuracy on test set: 84.9%**
+
+---
+
+## What Makes VeritasXR Novel
+
+Standard approaches fine-tune a pretrained ResNet50 — one path, one output, no uncertainty.
+VeritasXR was designed from scratch with clinical deployment in mind:
+
+| Design Decision | Why |
+|---|---|
+| **Dual-path architecture** | Small kernels (3×3) capture fine lesion details. Large kernels (7×7) capture whole-lung structure. Both run in parallel. |
+| **Learned path weights** | A learnable `path_weights` parameter lets the model decide how much to trust local vs global features per input. |
+| **Squeeze-Excitation blocks** | Channel attention in each path — model suppresses irrelevant feature maps automatically. |
+| **Uncertainty head** | A separate sigmoid output estimates prediction confidence. High uncertainty cases are flagged for radiologist review. |
+| **Triton deployment** | Both verdict and uncertainty served from GPU in a single inference call — no local PyTorch at runtime. |
+
+---
+
+## Architecture
+
+```
+Input (1×224×224 grayscale X-ray)
+        │
+        ▼
+    Stem (Conv 11×11 → Conv 3×3 → MaxPool)
+        │
+   ┌────┴────┐
+   │         │
+Local Path  Global Path
+(kernel=3)  (kernel=7)
+DualPathBlock  DualPathBlock
+DualPathBlock  DualPathBlock
+SqueezeExcite  SqueezeExcite
+AdaptivePool   AdaptivePool
+   │         │
+   └────┬────┘
+        │
+   Learned Weighted Merge (softmax weights)
+        │
+   ┌────┴────┐
+   │         │
+Classifier  Uncertainty
+  Head        Head
+   │         │
+verdict   uncertainty
+(2 classes) (0–1 score)
+```
 
 ---
 
@@ -23,39 +73,27 @@ Built on real medical data — the Kaggle Chest X-Ray (Pneumonia) dataset.
 
 ```
 trt_speedtest/
-├── data/
-│   └── chest_xray/
-│       └── chest_xray/
-│           ├── train/   (NORMAL / PNEUMONIA)
-│           ├── val/     (NORMAL / PNEUMONIA)
-│           └── test/    (NORMAL / PNEUMONIA)
-├── models/
-│   ├── resnet50_xray.pth       ← fine-tuned weights
-│   ├── resnet50.onnx           ← exported ONNX model
-│   └── resnet50_fp16.trt       ← TensorRT engine (Windows, not used by Triton)
-├── triton_models/
-│   └── xray_classifier/
-│       ├── config.pbtxt        ← Triton model config
-│       └── 1/
-│           └── model.plan      ← TensorRT engine built inside Linux container
-├── results/
-│   ├── benchmark_results.json  ← raw benchmark numbers
-│   ├── charts.png              ← 2-way comparison chart
-│   ├── final_chart.png         ← 3-way comparison chart
-│   └── analysis/               ← 5 EDA + metrics plots
 ├── api/
-│   └── app.py                  ← FastAPI backend
+│   └── app.py                      ← FastAPI backend → Triton client
 ├── frontend/
-│   └── index.html              ← demo web UI
-├── 1_export_onnx.py
-├── 2_build_engine.py
-├── 3_benchmark.py
-├── 4_plot_results.py
-├── 5_finetune.py
-├── 6_triton_benchmark.py
-├── 7_final_chart.py
-├── analysis.py
-├── verify.py
+│   └── index.html                  ← Demo web UI
+├── models/
+│   ├── veritasxr.pth               ← trained weights
+│   └── veritasxr.onnx              ← exported ONNX model
+├── triton_models/
+│   └── veritasxr/
+│       ├── config.pbtxt            ← Triton model config
+│       └── 1/
+│           └── model.onnx          ← ONNX model served by Triton
+├── results/
+│   ├── veritasxr_benchmark.json    ← benchmark results
+│   └── veritasxr_comparison.json  ← model comparison results
+├── veritasxr_model.py              ← VeritasXR architecture
+├── export_onnx.py                  ← export to ONNX with correct output names
+├── train_veritaxr.py               ← training script
+├── benchmark.py                    ← latency + throughput benchmark
+├── analysis.py                     ← EDA + metrics plots
+├── compare_models.py               ← VeritasXR vs ResNet50 comparison
 └── requirements.txt
 ```
 
@@ -64,214 +102,203 @@ trt_speedtest/
 ## Prerequisites
 
 - Windows 10/11 with WSL2 or Linux
-- NVIDIA GPU (tested on RTX 3070 Ti)
-- CUDA 12.x drivers installed
+- NVIDIA GPU (tested on RTX 3070 Ti Laptop)
+- CUDA 12.x drivers
 - Anaconda or Python 3.10+
 - Docker Desktop with GPU support enabled
 - Kaggle account (for dataset download)
 
 ---
 
-## Step-by-Step Setup
+## Setup
 
-### Step 1 — Clone / create project folder
+### Step 1 — Clone the repo
 
 ```powershell
-mkdir C:\Users\<you>\Documents\trt_speedtest
-cd C:\Users\<you>\Documents\trt_speedtest
+git clone <your-repo-url>
+cd trt_speedtest
 ```
 
-### Step 2 — Install Python dependencies
+### Step 2 — Install dependencies
 
 ```powershell
-pip install torch torchvision onnx matplotlib numpy
-pip install tensorrt pycuda
+pip install torch torchvision onnx onnxruntime
 pip install fastapi uvicorn python-multipart pillow
-pip install tritonclient[http]
+pip install tritonclient[http] numpy matplotlib
+pip install flask-cors aiohttp
 ```
 
 ### Step 3 — Download the dataset
 
 Go to: https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia
 
-Download and unzip into:
+Unzip into:
 ```
-trt_speedtest\data\chest_xray\chest_xray\
-```
-
-Verify the structure looks like:
-```
-data\chest_xray\chest_xray\train\NORMAL\
-data\chest_xray\chest_xray\train\PNEUMONIA\
-data\chest_xray\chest_xray\test\NORMAL\
-data\chest_xray\chest_xray\test\PNEUMONIA\
-data\chest_xray\chest_xray\val\NORMAL\
-data\chest_xray\chest_xray\val\PNEUMONIA\
+trt_speedtest/data/chest_xray/
+├── train/
+│   ├── NORMAL/
+│   └── PNEUMONIA/
+├── val/
+│   ├── NORMAL/
+│   └── PNEUMONIA/
+└── test/
+    ├── NORMAL/
+    └── PNEUMONIA/
 ```
 
 ---
 
 ## Running the Project
 
-### Step 4 — Fine-tune ResNet-50 on chest X-rays
+### Step 4 — Train VeritasXR
 
 ```powershell
-python 5_finetune.py
+python train_veritasxr.py
 ```
 
-- Takes ~20 minutes on RTX 3070 Ti
-- Trains for 5 epochs, freezes backbone, only trains the final layer
-- Saves best model to `models/resnet50_xray.pth`
-- Expected test accuracy: ~85%
+- Trains dual-path architecture from scratch on chest X-rays
+- Saves best weights to `models/veritasxr.pth`
+- Expected accuracy: ~85%
 
 ### Step 5 — Export to ONNX
 
 ```powershell
-python 1_export_onnx.py
+python export_onnx.py
 ```
 
-- Loads fine-tuned weights
-- Exports to `models/resnet50.onnx` with dynamic batch axis
-- Takes ~10 seconds
+- Exports full model with both `verdict` and `uncertainty` outputs
+- Saves to `models/veritasxr.onnx`
 
-### Step 6 — Build TensorRT engine (Windows)
+Verify output names:
+```python
+import onnx
+m = onnx.load("models/veritasxr.onnx")
+for o in m.graph.output:
+    print(o.name)
+# verdict
+# uncertainty
+```
+
+### Step 6 — Set Up Triton Model Repository
 
 ```powershell
-python 2_build_engine.py
+New-Item -ItemType Directory -Path "triton_models\veritasxr\1" -Force
+copy "models\veritasxr.onnx" "triton_models\veritasxr\1\model.onnx"
 ```
 
-- Builds FP16 TensorRT engine from the ONNX file
-- Saves to `models/resnet50_fp16.trt`
-- Takes 5–15 minutes (first time only)
+`triton_models/veritasxr/config.pbtxt`:
+```protobuf
+name: "veritasxr"
+backend: "onnxruntime"
+max_batch_size: 8
 
-### Step 7 — Run PyTorch vs TensorRT benchmark
+input [
+  {
+    name: "input"
+    data_type: TYPE_FP32
+    dims: [ 1, 224, 224 ]
+  }
+]
 
-```powershell
-python 3_benchmark.py
+output [
+  {
+    name: "verdict"
+    data_type: TYPE_FP32
+    dims: [ 2 ]
+  },
+  {
+    name: "uncertainty"
+    data_type: TYPE_FP32
+    dims: [ 1 ]
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 1, 4, 8 ]
+}
 ```
 
-- Runs 200 warmup + 200 timed inferences for both
-- Saves results to `results/benchmark_results.json`
-- Takes ~2 minutes
+### Step 7 — Start Triton Inference Server
 
-### Step 8 — Build the Linux TensorRT engine for Triton
-
-Triton runs on Linux inside Docker so the Windows .trt engine is incompatible.
-Build a Linux-compatible engine inside the container:
+Open a dedicated terminal and keep it running:
 
 ```powershell
 docker run --gpus all --rm `
-  -v C:\Users\<you>\Documents\trt_speedtest:/workspace `
-  nvcr.io/nvidia/tritonserver:25.01-py3 `
-  /usr/src/tensorrt/bin/trtexec `
-  --onnx=/workspace/models/resnet50.onnx `
-  --saveEngine=/workspace/triton_models/xray_classifier/1/model.plan `
-  --fp16
-```
-
-- Takes 5–10 minutes
-- Saves engine to `triton_models/xray_classifier/1/model.plan`
-
-### Step 9 — Start Triton Inference Server
-
-Open a **dedicated terminal** and keep it running:
-
-```powershell
-docker run --gpus all --rm `
-  -p 8000:8000 -p 8001:8001 -p 8002:8002 `
+  -p 8010:8000 -p 8011:8001 -p 8012:8002 `
   -v C:\Users\<you>\Documents\trt_speedtest\triton_models:/models `
   nvcr.io/nvidia/tritonserver:25.01-py3 `
   tritonserver --model-repository=/models
 ```
 
-Wait until you see:
+Wait for:
 ```
-| xray_classifier | 1 | READY |
-Started HTTPService at 0.0.0.0:8000
-```
-
-### Step 10 — Benchmark Triton
-
-Open a **new terminal**:
-
-```powershell
-python 6_triton_benchmark.py
+| veritasxr | 1 | READY |
 ```
 
-- Sends 200 HTTP requests to Triton
-- Appends Triton results to `results/benchmark_results.json`
-
-### Step 11 — Generate charts
-
-```powershell
-python 7_final_chart.py
-```
-
-- Generates 3-way comparison chart
-- Saves to `results/final_chart.png`
-
-### Step 12 — Run full analysis + EDA
-
-```powershell
-python analysis.py
-```
-
-Generates 5 plots in `results/analysis/`:
-
-| File | Contents |
-|---|---|
-| `1_eda.png` | Class distribution, dataset balance, image sizes, sample grid |
-| `2_model_metrics.png` | Confusion matrix, precision/recall/F1, confidence distribution |
-| `3_roc_pr.png` | ROC curve with AUC score, Precision-Recall curve |
-| `4_pixel_analysis.png` | Pixel intensity histograms, brightness per class |
-| `5_speed_comparison.png` | Full 3-way latency and throughput comparison |
-
-### Step 13 — Verify model predictions
-
-```powershell
-python verify.py
-```
-
-Prints accuracy, precision, recall, F1, and full confusion matrix on the test set.
-
-### Step 14 — Start the demo web app
-
-Make sure Triton is still running (Step 9), then open a new terminal:
+### Step 8 — Start the API
 
 ```powershell
 uvicorn api.app:app --reload --port 8080
 ```
 
-Open your browser at: **http://localhost:8080**
+Open: **http://localhost:8080**
 
-Upload any chest X-ray and get:
+Upload a chest X-ray and get:
 - Prediction: NORMAL or PNEUMONIA
 - Confidence percentage
-- Live inference latency in ms
-- Speed comparison bar chart
+- Uncertainty score + triage recommendation
+- Live inference latency
+
+### Step 9 — Run Benchmarks
+
+```powershell
+python benchmark.py
+```
+
+### Step 10 — Stress Test
+
+```powershell
+python stress_test.py
+```
+
+Sends 100 concurrent requests and reports P50/P90/P99 latency and throughput.
+
+---
+
+## Uncertainty Triage System
+
+VeritasXR outputs a clinical triage recommendation based on the uncertainty score:
+
+| Uncertainty Score | Label | Action |
+|---|---|---|
+| < 0.4 | High Confidence | Safe to act on |
+| 0.4 – 0.7 | Moderate Confidence | Consider review |
+| > 0.7 | Low Confidence | Flag for radiologist review |
+
+This means the system knows when it doesn't know — critical for safe clinical deployment.
 
 ---
 
 ## Troubleshooting
 
-**`num_workers` error on Windows**
-Add `if __name__ == '__main__':` guard and set `num_workers=0` in DataLoader.
+**Triton: `unexpected inference output` error**
+Your ONNX was exported with wrong output names. Re-run `export_onnx.py` and verify output names are `verdict` and `uncertainty`.
 
-**Triton: version mismatch error**
-The `.trt` engine was built with a different TensorRT version.
-Use the `trtexec` command inside the Triton container (Step 8) to rebuild.
+**Port already allocated**
+```powershell
+netstat -ano | findstr :8010
+taskkill /PID <PID> /F
+```
 
-**Triton: platform tag mismatch**
-Windows-built engines don't run in Linux containers.
-Always build the Triton engine inside the Docker container (Step 8).
+**Docker not running**
+Start Docker Desktop and wait for the whale icon to stop animating, then retry.
 
-**Triton: max-batch size mismatch**
-Set `max_batch_size: 1` in `triton_models/xray_classifier/config.pbtxt`
-to match the engine's batch size.
-
-**FastAPI: "Failed to fetch"**
-Make sure Triton is running on port 8000 and FastAPI is on port 8080.
-Check `const API = 'http://localhost:8080'` in `frontend/index.html`.
+**`.gitignore` not ignoring dataset**
+```bash
+git rm -r --cached data/
+git add .
+git commit -m "remove dataset from tracking"
+```
 
 ---
 
@@ -279,14 +306,14 @@ Check `const API = 'http://localhost:8080'` in `frontend/index.html`.
 
 | Component | Technology |
 |---|---|
-| Model | ResNet-50 (torchvision pretrained) |
+| Model | VeritasXR (custom dual-path CNN) |
 | Training | PyTorch 2.x |
-| Optimization | NVIDIA TensorRT 10.x (FP16) |
+| Export | ONNX opset 17 |
 | Serving | NVIDIA Triton Inference Server 2.54 |
-| Backend API | FastAPI + uvicorn |
+| Backend | FastAPI + uvicorn |
 | Frontend | HTML / CSS / Vanilla JS |
 | GPU | NVIDIA RTX 3070 Ti Laptop |
-| CUDA | 13.0 |
+| CUDA | 12.x |
 | Dataset | Kaggle Chest X-Ray (Pneumonia) — 5,216 train / 624 test |
 
 ---
@@ -295,16 +322,11 @@ Check `const API = 'http://localhost:8080'` in `frontend/index.html`.
 
 | Name | Roll No | Contribution |
 |---|---|---|
-| Vansh C | RA2311026010114 | PyTorch baseline + ONNX export |
-| Aditya Joshi | RA2311026010129 | TensorRT engine build |
-| Hirav Kadikar | RA2311026010111 | Benchmarking + analysis |
-| Anjany Kumar Jaiswal | RA2311026010006 | Triton deployment + frontend |
+| Vansh C | RA2311026010114 | VeritasXR architecture + Triton deployment |
+| Aditya Joshi | RA2311026010129 | ONNX export + TensorRT engine build |
+| Hirav Kadikar | RA2311026010111 | Benchmarking + stress testing + analysis |
+| Anjany Kumar Jaiswal | RA2311026010006 | FastAPI backend + frontend demo |
 
 ---
 
 *SEAI Project · 2026 · Accelerating Neural Network Inferencing: TensorRT & Triton Inference Server*
-
-
-Your professor asked for novelty. This is it —
-
-"We propose a dual-pathway architecture where local and global features are learned in parallel, with inter-path disagreement used as an intrinsic uncertainty signal for clinical decision support."
