@@ -1,388 +1,132 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chest X-Ray AI Classifier</title>
+<title>VeritasXR — Chest X-Ray AI</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg: #0a0a0f;
-    --bg2: #111118;
-    --bg3: #1a1a24;
-    --border: rgba(255,255,255,0.08);
-    --border2: rgba(255,255,255,0.14);
-    --text: #f0f0f5;
-    --text2: #9090a8;
-    --text3: #5a5a70;
-    --accent: #6c63ff;
-    --accent2: #4ecca3;
-    --danger: #ff6b6b;
-    --success: #4ecca3;
-    --warn: #ffa94d;
+    --bg:#f5f6fa; --bg2:#ffffff; --bg3:#eef0f6;
+    --border:rgba(0,0,0,0.08); --border2:rgba(0,0,0,0.13);
+    --text:#1a1a2e; --text2:#5a5a78; --text3:#9090a8;
+    --accent:#5b52e8; --accent2:#0f9e75;
+    --danger:#d63a3a; --success:#0f9e75; --warn:#c97a10;
+    --pill-bg:rgba(91,82,232,0.08); --pill-col:#5b52e8;
   }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    min-height: 100vh;
-    padding: 0;
+  [data-theme="dark"] {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#1a1a24;
+    --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.14);
+    --text:#f0f0f5; --text2:#9090a8; --text3:#5a5a70;
+    --accent:#6c63ff; --accent2:#4ecca3;
+    --danger:#ff6b6b; --success:#4ecca3; --warn:#ffa94d;
+    --pill-bg:rgba(108,99,255,0.15); --pill-col:#a09fff;
   }
-
-  a { color: var(--accent2); text-decoration: none; }
-
-  .navbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 32px;
-    height: 56px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg);
-  }
-  .nav-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.3px;
-  }
-  .nav-logo-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--accent2);
-  }
-  .nav-pills {
-    display: flex;
-    gap: 6px;
-  }
-  .nav-pill {
-    font-size: 12px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    border: 1px solid var(--border2);
-    color: var(--text2);
-  }
-  .nav-pill.active {
-    background: rgba(108,99,255,0.15);
-    border-color: rgba(108,99,255,0.4);
-    color: #a09fff;
-  }
-
-  .hero {
-    text-align: center;
-    padding: 48px 32px 32px;
-  }
-  .hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--accent2);
-    border: 1px solid rgba(78,204,163,0.25);
-    background: rgba(78,204,163,0.08);
-    padding: 4px 12px;
-    border-radius: 20px;
-    margin-bottom: 16px;
-  }
-  .hero-badge-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent2);
-    animation: pulse 2s ease-in-out infinite;
-  }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; min-height:100vh; transition:background 0.25s,color 0.25s; }
+  .navbar { display:flex; align-items:center; justify-content:space-between; padding:0 32px; height:56px; border-bottom:1px solid var(--border); background:var(--bg2); }
+  .nav-logo { display:flex; align-items:center; gap:10px; font-size:15px; font-weight:600; letter-spacing:-0.3px; color:var(--text); }
+  .nav-logo-dot { width:8px; height:8px; border-radius:50%; background:var(--accent2); }
+  .nav-right { display:flex; align-items:center; gap:8px; }
+  .nav-pills { display:flex; gap:6px; }
+  .nav-pill { font-size:12px; padding:3px 10px; border-radius:20px; border:1px solid var(--border2); color:var(--text2); }
+  .nav-pill.active { background:var(--pill-bg); border-color:transparent; color:var(--pill-col); }
+  .theme-btn { width:34px; height:34px; border-radius:8px; border:1px solid var(--border2); background:var(--bg3); cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text2); transition:background 0.2s; }
+  .theme-btn:hover { background:var(--border); }
+  .theme-btn svg { width:16px; height:16px; }
+  .i-sun { display:none; } .i-moon { display:block; }
+  [data-theme="dark"] .i-sun { display:block; } [data-theme="dark"] .i-moon { display:none; }
+  .hero { text-align:center; padding:44px 32px 28px; }
+  .hero-badge { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--accent2); border:1px solid rgba(15,158,117,0.25); background:rgba(15,158,117,0.08); padding:4px 12px; border-radius:20px; margin-bottom:16px; }
+  [data-theme="dark"] .hero-badge { border-color:rgba(78,204,163,0.25); background:rgba(78,204,163,0.08); }
+  .badge-dot { width:6px; height:6px; border-radius:50%; background:var(--accent2); animation:pulse 2s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  .hero h1 {
-    font-size: 32px;
-    font-weight: 700;
-    letter-spacing: -0.8px;
-    line-height: 1.2;
-    margin-bottom: 10px;
-  }
-  .hero h1 span { color: var(--accent2); }
-  .hero p {
-    font-size: 14px;
-    color: var(--text2);
-    max-width: 480px;
-    margin: 0 auto;
-    line-height: 1.6;
-  }
-
-  .stats-bar {
-    display: flex;
-    justify-content: center;
-    gap: 0;
-    margin: 28px auto;
-    max-width: 600px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    background: var(--bg2);
-  }
-  .stat-item {
-    flex: 1;
-    padding: 14px 16px;
-    text-align: center;
-    border-right: 1px solid var(--border);
-  }
-  .stat-item:last-child { border-right: none; }
-  .stat-val {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-  }
-  .stat-val.green { color: var(--accent2); }
-  .stat-val.purple { color: #a09fff; }
-  .stat-val.orange { color: var(--warn); }
-  .stat-lbl {
-    font-size: 11px;
-    color: var(--text3);
-    margin-top: 2px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .main-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 0 24px 40px;
-  }
-
-  .panel {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px;
-  }
-
-  .panel-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 14px;
-  }
-
-  .upload-zone {
-    border: 1.5px dashed var(--border2);
-    border-radius: 12px;
-    padding: 28px 16px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-    margin-bottom: 14px;
-  }
-  .upload-zone:hover {
-    border-color: rgba(108,99,255,0.5);
-    background: rgba(108,99,255,0.04);
-  }
-  .upload-zone.dragover {
-    border-color: var(--accent2);
-    background: rgba(78,204,163,0.06);
-  }
-  .upload-icon {
-    width: 36px; height: 36px;
-    margin: 0 auto 10px;
-    border-radius: 10px;
-    background: rgba(108,99,255,0.12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .upload-icon svg { width: 18px; height: 18px; color: #a09fff; }
-  .upload-zone p { font-size: 13px; color: var(--text2); margin-bottom: 4px; }
-  .upload-zone span { font-size: 11px; color: var(--text3); }
-
-  .preview-box {
-    width: 100%;
-    aspect-ratio: 1;
-    background: #070710;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    margin-bottom: 14px;
-    border: 1px solid var(--border);
-  }
-  .preview-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-  .preview-placeholder svg { width: 40px; height: 40px; color: var(--text3); }
-
-  #fileInput { display: none; }
-
-  .btn-analyze {
-    width: 100%;
-    padding: 11px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
-    letter-spacing: -0.2px;
-  }
-  .btn-analyze:hover { opacity: 0.88; }
-  .btn-analyze:active { transform: scale(0.98); }
-  .btn-analyze:disabled { opacity: 0.35; cursor: not-allowed; }
-
-  .btn-sample {
-    width: 100%;
-    padding: 9px;
-    background: transparent;
-    color: var(--text2);
-    border: 1px solid var(--border2);
-    border-radius: 10px;
-    font-size: 13px;
-    cursor: pointer;
-    margin-top: 8px;
-    transition: background 0.2s, color 0.2s;
-  }
-  .btn-sample:hover { background: var(--bg3); color: var(--text); }
-
-  .result-section { margin-bottom: 18px; }
-
-  .diagnosis-card {
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .diagnosis-card.normal { background: rgba(78,204,163,0.1); border: 1px solid rgba(78,204,163,0.25); }
-  .diagnosis-card.pneumonia { background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.25); }
-  .diagnosis-card.waiting { background: var(--bg3); border: 1px solid var(--border); }
-  .diagnosis-icon {
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  .diagnosis-icon svg { width: 20px; height: 20px; }
-  .diagnosis-icon.normal { background: rgba(78,204,163,0.2); color: var(--success); }
-  .diagnosis-icon.pneumonia { background: rgba(255,107,107,0.2); color: var(--danger); }
-  .diagnosis-icon.waiting { background: var(--bg3); color: var(--text3); }
-  .diagnosis-title { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
-  .diagnosis-title.normal { color: var(--success); }
-  .diagnosis-title.pneumonia { color: var(--danger); }
-  .diagnosis-title.waiting { color: var(--text2); }
-  .diagnosis-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
-
-  .conf-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-  .conf-name { font-size: 13px; color: var(--text2); width: 90px; flex-shrink: 0; }
-  .conf-track { flex: 1; height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; }
-  .conf-fill { height: 5px; border-radius: 3px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); width: 0; }
-  .conf-fill.normal { background: var(--success); }
-  .conf-fill.pneumonia { background: var(--danger); }
-  .conf-pct { font-size: 12px; font-weight: 600; width: 38px; text-align: right; }
-
-  .metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 18px;
-  }
-  .metric-card {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 10px;
-    text-align: center;
-  }
-  .metric-val { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
-  .metric-val.green { color: var(--accent2); }
-  .metric-val.purple { color: #a09fff; }
-  .metric-val.orange { color: var(--warn); }
-  .metric-lbl { font-size: 11px; color: var(--text3); margin-top: 3px; }
-
-  .speed-section {}
-  .speed-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .speed-row:last-child { border-bottom: none; }
-  .speed-label { font-size: 12px; color: var(--text2); width: 110px; flex-shrink: 0; }
-  .speed-tag {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 1px 6px;
-    border-radius: 8px;
-    margin-left: 4px;
-  }
-  .speed-tag.trt { background: rgba(78,204,163,0.15); color: var(--accent2); }
-  .speed-tag.triton { background: rgba(255,169,77,0.15); color: var(--warn); }
-  .speed-track { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
-  .speed-fill { height: 6px; border-radius: 3px; }
-  .speed-fill.pytorch { background: #7c72e8; width: 100%; }
-  .speed-fill.trt { background: var(--accent2); width: 12%; }
-  .speed-fill.triton { background: var(--warn); width: 8%; }
-  .speed-ms { font-size: 12px; font-weight: 600; width: 44px; text-align: right; }
-  .speed-ms.pytorch { color: #a09fff; }
-  .speed-ms.trt { color: var(--accent2); }
-  .speed-ms.triton { color: var(--warn); }
-
-  .loading-overlay {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 40px;
-  }
-  .loading-overlay.visible { display: flex; }
-  .spinner {
-    width: 32px; height: 32px;
-    border: 2px solid var(--border2);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-size: 13px; color: var(--text2); }
-
-  .footer {
-    text-align: center;
-    padding: 20px;
-    border-top: 1px solid var(--border);
-    font-size: 12px;
-    color: var(--text3);
-  }
-  .footer span { color: var(--text2); }
-
-  .toast {
-    display: none;
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    border-radius: 10px;
-    padding: 10px 20px;
-    font-size: 13px;
-    color: var(--text);
-    z-index: 100;
-  }
-  .toast.visible { display: block; animation: fadeup 0.3s ease; }
-  @keyframes fadeup { from { opacity:0; transform: translateX(-50%) translateY(8px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+  .hero h1 { font-size:30px; font-weight:700; letter-spacing:-0.8px; line-height:1.2; margin-bottom:10px; color:var(--text); }
+  .hero h1 span { color:var(--accent2); }
+  .hero p { font-size:14px; color:var(--text2); max-width:500px; margin:0 auto; line-height:1.6; }
+  .stats-bar { display:flex; margin:24px auto; max-width:700px; border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--bg2); }
+  .stat-item { flex:1; padding:14px 12px; text-align:center; border-right:1px solid var(--border); }
+  .stat-item:last-child { border-right:none; }
+  .stat-val { font-size:19px; font-weight:700; letter-spacing:-0.5px; }
+  .teal { color:var(--accent2); } .purple { color:var(--accent); } .amber { color:var(--warn); } .red { color:var(--danger); }
+  .stat-lbl { font-size:11px; color:var(--text3); margin-top:2px; text-transform:uppercase; letter-spacing:0.06em; }
+  .main-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:980px; margin:0 auto; padding:0 24px 40px; }
+  .panel { background:var(--bg2); border:1px solid var(--border); border-radius:16px; padding:20px; }
+  .panel-label { font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:14px; }
+  .upload-zone { border:1.5px dashed var(--border2); border-radius:12px; padding:28px 16px; text-align:center; cursor:pointer; transition:border-color 0.2s,background 0.2s; margin-bottom:14px; }
+  .upload-zone:hover { border-color:var(--accent); background:rgba(91,82,232,0.04); }
+  .upload-zone.dragover { border-color:var(--accent2); background:rgba(15,158,117,0.05); }
+  .upload-icon { width:36px; height:36px; margin:0 auto 10px; border-radius:10px; background:rgba(91,82,232,0.1); display:flex; align-items:center; justify-content:center; }
+  [data-theme="dark"] .upload-icon { background:rgba(108,99,255,0.12); }
+  .upload-icon svg { width:18px; height:18px; color:var(--accent); }
+  .upload-zone p { font-size:13px; color:var(--text2); margin-bottom:4px; }
+  .upload-zone span { font-size:11px; color:var(--text3); }
+  .preview-box { width:100%; aspect-ratio:1; background:var(--bg3); border-radius:10px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:14px; border:1px solid var(--border); }
+  .preview-box img { width:100%; height:100%; object-fit:contain; }
+  .preview-placeholder svg { width:40px; height:40px; color:var(--text3); }
+  #fileInput { display:none; }
+  .btn-analyze { width:100%; padding:11px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; transition:opacity 0.2s,transform 0.1s; }
+  .btn-analyze:hover { opacity:0.88; } .btn-analyze:active { transform:scale(0.98); } .btn-analyze:disabled { opacity:0.35; cursor:not-allowed; }
+  .btn-sample { width:100%; padding:9px; background:transparent; color:var(--text2); border:1px solid var(--border2); border-radius:10px; font-size:13px; cursor:pointer; margin-top:8px; transition:background 0.2s,color 0.2s; }
+  .btn-sample:hover { background:var(--bg3); color:var(--text); }
+  .diag-card { border-radius:12px; padding:14px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px; }
+  .diag-card.normal   { background:rgba(15,158,117,0.08); border:1px solid rgba(15,158,117,0.22); }
+  .diag-card.pneumonia { background:rgba(214,58,58,0.08); border:1px solid rgba(214,58,58,0.22); }
+  .diag-card.waiting  { background:var(--bg3); border:1px solid var(--border); }
+  [data-theme="dark"] .diag-card.normal    { background:rgba(78,204,163,0.1); border-color:rgba(78,204,163,0.25); }
+  [data-theme="dark"] .diag-card.pneumonia { background:rgba(255,107,107,0.1); border-color:rgba(255,107,107,0.25); }
+  .diag-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .diag-icon svg { width:20px; height:20px; }
+  .diag-icon.normal    { background:rgba(15,158,117,0.15); color:var(--success); }
+  .diag-icon.pneumonia { background:rgba(214,58,58,0.15);  color:var(--danger); }
+  .diag-icon.waiting   { background:var(--bg3); color:var(--text3); }
+  .diag-title { font-size:16px; font-weight:700; letter-spacing:-0.3px; }
+  .diag-title.normal    { color:var(--success); } .diag-title.pneumonia { color:var(--danger); } .diag-title.waiting { color:var(--text2); }
+  .diag-sub { font-size:12px; color:var(--text2); margin-top:2px; }
+  .u-card { border-radius:10px; padding:12px 14px; margin-bottom:14px; border:1px solid var(--border); background:var(--bg3); }
+  .u-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .u-label { font-size:12px; color:var(--text2); }
+  .u-badge { font-size:11px; font-weight:600; padding:2px 8px; border-radius:8px; }
+  .u-badge.hc { background:rgba(15,158,117,0.12); color:var(--success); }
+  .u-badge.mc { background:rgba(201,122,16,0.12);  color:var(--warn); }
+  .u-badge.lc { background:rgba(214,58,58,0.12);   color:var(--danger); }
+  [data-theme="dark"] .u-badge.hc { background:rgba(78,204,163,0.15); }
+  [data-theme="dark"] .u-badge.mc { background:rgba(255,169,77,0.15); }
+  [data-theme="dark"] .u-badge.lc { background:rgba(255,107,107,0.15); }
+  .u-track { height:5px; background:var(--border); border-radius:3px; overflow:hidden; margin-bottom:6px; }
+  .u-fill { height:5px; border-radius:3px; transition:width 0.6s cubic-bezier(0.4,0,0.2,1); width:0; }
+  .u-fill.hc { background:var(--success); } .u-fill.mc { background:var(--warn); } .u-fill.lc { background:var(--danger); }
+  .triage-row { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text3); }
+  .triage-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+  .conf-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .conf-name { font-size:13px; color:var(--text2); width:90px; flex-shrink:0; }
+  .conf-track { flex:1; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
+  .conf-fill { height:5px; border-radius:3px; transition:width 0.6s cubic-bezier(0.4,0,0.2,1); width:0; }
+  .cf-normal { background:var(--success); } .cf-pneum { background:var(--danger); }
+  .conf-pct { font-size:12px; font-weight:600; width:38px; text-align:right; }
+  .metrics-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:18px; }
+  .metric-card { background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px 10px; text-align:center; }
+  .metric-val { font-size:20px; font-weight:700; letter-spacing:-0.5px; }
+  .metric-lbl { font-size:11px; color:var(--text3); margin-top:3px; }
+  .speed-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--border); }
+  .speed-row:last-child { border-bottom:none; }
+  .speed-label { font-size:12px; color:var(--text2); width:130px; flex-shrink:0; }
+  .speed-tag { font-size:10px; font-weight:600; padding:1px 6px; border-radius:8px; margin-left:4px; background:rgba(15,158,117,0.12); color:var(--success); }
+  [data-theme="dark"] .speed-tag { background:rgba(78,204,163,0.15); }
+  .speed-track { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+  .speed-fill { height:6px; border-radius:3px; }
+  .sf-resnet { background:#d63a3a; width:100%; } .sf-vxpt { background:var(--accent); width:46%; } .sf-vxtrt { background:var(--accent2); width:14%; }
+  .speed-ms { font-size:12px; font-weight:600; width:48px; text-align:right; }
+  .sm-resnet { color:var(--danger); } .sm-vxpt { color:var(--accent); } .sm-vxtrt { color:var(--accent2); }
+  .loading-overlay { display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:40px; }
+  .loading-overlay.visible { display:flex; }
+  .spinner { width:32px; height:32px; border:2px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-text { font-size:13px; color:var(--text2); }
+  .footer { text-align:center; padding:20px; border-top:1px solid var(--border); font-size:12px; color:var(--text3); }
+  .footer span { color:var(--text2); }
+  .toast { display:none; position:absolute; bottom:24px; left:50%; transform:translateX(-50%); background:var(--bg2); border:1px solid var(--border2); border-radius:10px; padding:10px 20px; font-size:13px; color:var(--text); z-index:100; }
+  .toast.visible { display:block; animation:fadeup 0.3s ease; }
+  @keyframes fadeup { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
 </style>
 </head>
 <body>
@@ -390,277 +134,227 @@
 <nav class="navbar">
   <div class="nav-logo">
     <div class="nav-logo-dot"></div>
-    XRay AI
+    VeritasXR
   </div>
-  <div class="nav-pills">
-    <div class="nav-pill active">TensorRT</div>
-    <div class="nav-pill">Triton Server</div>
-    <div class="nav-pill">ResNet-50</div>
-    <div class="nav-pill">RTX 3070</div>
+  <div class="nav-right">
+    <div class="nav-pills">
+      <div class="nav-pill active">TensorRT FP16</div>
+      <div class="nav-pill">Dual-Pathway CNN</div>
+      <div class="nav-pill">Uncertainty-Aware</div>
+      <div class="nav-pill">RTX 3070</div>
+    </div>
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+      <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/></svg>
+      <svg class="i-sun"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
   </div>
 </nav>
 
 <div class="hero">
-  <div class="hero-badge">
-    <div class="hero-badge-dot"></div>
-    Triton Inference Server · Live
-  </div>
-  <h1>Chest X-Ray <span>AI Diagnosis</span></h1>
-  <p>Upload a chest X-ray to detect pneumonia in real time. Powered by a TensorRT-optimized ResNet-50 served via NVIDIA Triton.</p>
+  <div class="hero-badge"><div class="badge-dot"></div>Triton Inference Server · Live</div>
+  <h1>VeritasXR <span>Clinical AI</span></h1>
+  <p>A custom dual-pathway architecture for chest X-ray pneumonia detection — with uncertainty estimation for clinical triage. Built from scratch, optimized with TensorRT.</p>
 </div>
 
 <div class="stats-bar">
-  <div class="stat-item">
-    <div class="stat-val green">13x</div>
-    <div class="stat-lbl">Speedup vs PyTorch</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-val purple">1.4ms</div>
-    <div class="stat-lbl">Inference time</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-val orange">84.9%</div>
-    <div class="stat-lbl">Test accuracy</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-val green">648</div>
-    <div class="stat-lbl">Images / second</div>
-  </div>
+  <div class="stat-item"><div class="stat-val teal">7.2x</div><div class="stat-lbl">Speedup vs ResNet</div></div>
+  <div class="stat-item"><div class="stat-val purple">2.53ms</div><div class="stat-lbl">Inference time</div></div>
+  <div class="stat-item"><div class="stat-val amber">17M</div><div class="stat-lbl">Parameters</div></div>
+  <div class="stat-item"><div class="stat-val teal">395</div><div class="stat-lbl">Images / second</div></div>
+  <div class="stat-item"><div class="stat-val red">Triage</div><div class="stat-lbl">Uncertainty-aware</div></div>
 </div>
 
 <div class="main-grid">
-
   <div class="panel">
     <div class="panel-label">Input</div>
-
     <div class="upload-zone" id="uploadZone">
-      <div class="upload-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-        </svg>
-      </div>
+      <div class="upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
       <p>Drop a chest X-ray here</p>
       <span>JPEG or PNG · any resolution</span>
     </div>
     <input type="file" id="fileInput" accept="image/*">
-
-    <div class="preview-box" id="previewBox">
-      <div class="preview-placeholder" id="previewPlaceholder">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-          <rect x="3" y="3" width="18" height="18" rx="2"/>
-          <circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/>
-        </svg>
-      </div>
+    <div class="preview-box">
+      <div class="preview-placeholder" id="previewPh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div>
       <img id="previewImg" style="display:none;" alt="X-ray preview">
     </div>
-
     <button class="btn-analyze" id="btnAnalyze" disabled onclick="analyze()">Analyze X-Ray</button>
     <button class="btn-sample" onclick="loadSample()">Load sample X-ray</button>
   </div>
 
   <div class="panel">
     <div class="panel-label">Diagnosis</div>
-
     <div id="loadingOverlay" class="loading-overlay">
       <div class="spinner"></div>
-      <div class="loading-text">Running inference via Triton...</div>
+      <div class="loading-text">Running VeritasXR via Triton...</div>
     </div>
-
     <div id="resultSection">
-      <div class="diagnosis-card waiting" id="diagnosisCard">
-        <div class="diagnosis-icon waiting" id="diagnosisIcon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
-          </svg>
-        </div>
+      <div class="diag-card waiting" id="diagCard">
+        <div class="diag-icon waiting" id="diagIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
         <div>
-          <div class="diagnosis-title waiting" id="diagnosisTitle">Awaiting image</div>
-          <div class="diagnosis-sub" id="diagnosisSub">Upload a chest X-ray to begin analysis</div>
+          <div class="diag-title waiting" id="diagTitle">Awaiting image</div>
+          <div class="diag-sub" id="diagSub">Upload a chest X-ray to begin analysis</div>
         </div>
       </div>
 
-      <div class="result-section">
-        <div class="conf-row">
-          <span class="conf-name">Normal</span>
-          <div class="conf-track"><div class="conf-fill normal" id="barNormal"></div></div>
-          <span class="conf-pct" id="pctNormal" style="color:#4ecca3">—</span>
-        </div>
-        <div class="conf-row">
-          <span class="conf-name">Pneumonia</span>
-          <div class="conf-track"><div class="conf-fill pneumonia" id="barPneumonia"></div></div>
-          <span class="conf-pct" id="pctPneumonia" style="color:#ff6b6b">—</span>
-        </div>
+      <div class="u-card">
+        <div class="u-header"><span class="u-label">Model uncertainty</span><span class="u-badge" id="uBadge">—</span></div>
+        <div class="u-track"><div class="u-fill" id="uFill"></div></div>
+        <div class="triage-row"><div class="triage-dot" id="triageDot" style="background:var(--text3)"></div><span id="triageText">Run inference to see clinical triage recommendation</span></div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div class="conf-row"><span class="conf-name">Normal</span><div class="conf-track"><div class="conf-fill cf-normal" id="barNormal"></div></div><span class="conf-pct teal" id="pctNormal">—</span></div>
+        <div class="conf-row"><span class="conf-name">Pneumonia</span><div class="conf-track"><div class="conf-fill cf-pneum" id="barPneumonia"></div></div><span class="conf-pct red" id="pctPneumonia">—</span></div>
       </div>
 
       <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-val green" id="metricLatency">—</div>
-          <div class="metric-lbl">Latency (ms)</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-val purple" id="metricConf">—</div>
-          <div class="metric-lbl">Confidence</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-val orange">13x</div>
-          <div class="metric-lbl">vs PyTorch</div>
-        </div>
+        <div class="metric-card"><div class="metric-val teal" id="mLatency">—</div><div class="metric-lbl">Latency (ms)</div></div>
+        <div class="metric-card"><div class="metric-val purple" id="mConf">—</div><div class="metric-lbl">Confidence</div></div>
+        <div class="metric-card"><div class="metric-val amber" id="mUnc">—</div><div class="metric-lbl">Uncertainty</div></div>
       </div>
 
       <div class="panel-label">Speed comparison</div>
-      <div class="speed-section">
-        <div class="speed-row">
-          <span class="speed-label">PyTorch (FP32)</span>
-          <div class="speed-track"><div class="speed-fill pytorch"></div></div>
-          <span class="speed-ms pytorch">18.1ms</span>
-        </div>
-        <div class="speed-row">
-          <span class="speed-label">TensorRT (FP16)<span class="speed-tag trt">8x</span></span>
-          <div class="speed-track"><div class="speed-fill trt"></div></div>
-          <span class="speed-ms trt">2.2ms</span>
-        </div>
-        <div class="speed-row">
-          <span class="speed-label">Triton + TRT<span class="speed-tag triton">13x</span></span>
-          <div class="speed-track"><div class="speed-fill triton"></div></div>
-          <span class="speed-ms triton">1.4ms</span>
-        </div>
+      <div>
+        <div class="speed-row"><span class="speed-label">ResNet-50 PyTorch</span><div class="speed-track"><div class="speed-fill sf-resnet"></div></div><span class="speed-ms sm-resnet">18.1ms</span></div>
+        <div class="speed-row"><span class="speed-label">VeritasXR PyTorch</span><div class="speed-track"><div class="speed-fill sf-vxpt"></div></div><span class="speed-ms sm-vxpt">8.26ms</span></div>
+        <div class="speed-row"><span class="speed-label">VeritasXR TRT<span class="speed-tag">7.2x</span></span><div class="speed-track"><div class="speed-fill sf-vxtrt"></div></div><span class="speed-ms sm-vxtrt">2.53ms</span></div>
       </div>
     </div>
   </div>
-
 </div>
 
-<div class="footer">
-  Built with <span>TensorRT 10.x · Triton 2.54 · ResNet-50 · PyTorch 2.x</span> &nbsp;·&nbsp; NVIDIA RTX 3070 Ti &nbsp;·&nbsp; SEAI Project
-</div>
-
+<div class="footer">Built with <span>TensorRT 10.x · Triton 2.54 · VeritasXR (custom) · PyTorch 2.x</span> &nbsp;·&nbsp; RTX 3070 Ti &nbsp;·&nbsp; SEAI Project 2026</div>
 <div class="toast" id="toast"></div>
 
 <script>
-  const API = 'http://localhost:8080';
-  let selectedFile = null;
+const API = 'http://localhost:8080';
+let selectedFile = null;
 
-  const uploadZone = document.getElementById('uploadZone');
-  const fileInput  = document.getElementById('fileInput');
-  const previewImg = document.getElementById('previewImg');
-  const previewPh  = document.getElementById('previewPlaceholder');
-  const btnAnalyze = document.getElementById('btnAnalyze');
+function toggleTheme() {
+  const h = document.documentElement;
+  h.setAttribute('data-theme', h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+}
 
-  uploadZone.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', e => { if(e.target.files[0]) setFile(e.target.files[0]); });
+const uploadZone = document.getElementById('uploadZone');
+const fileInput  = document.getElementById('fileInput');
+uploadZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => { if(e.target.files[0]) setFile(e.target.files[0]); });
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('dragover'); if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
 
-  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
-  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-  uploadZone.addEventListener('drop', e => {
-    e.preventDefault();
-    uploadZone.classList.remove('dragover');
-    if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
-  });
+function setFile(file) {
+  selectedFile = file;
+  const img = document.getElementById('previewImg');
+  img.src = URL.createObjectURL(file);
+  img.style.display = 'block';
+  document.getElementById('previewPh').style.display = 'none';
+  document.getElementById('btnAnalyze').disabled = false;
+  resetResult();
+}
 
-  function setFile(file) {
-    selectedFile = file;
-    const url = URL.createObjectURL(file);
-    previewImg.src = url;
-    previewImg.style.display = 'block';
-    previewPh.style.display = 'none';
-    btnAnalyze.disabled = false;
-    resetResult();
+function loadSample() {
+  showToast('Loading sample X-ray...');
+  fetch('https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Normal_posteroanterior_%28PA%29_chest_radiograph_%28X-ray%29.jpg/800px-Normal_posteroanterior_%28PA%29_chest_radiograph_%28X-ray%29.jpg')
+    .then(r => r.blob()).then(blob => { setFile(new File([blob], 'sample.jpg', {type:'image/jpeg'})); showToast('Sample loaded — click Analyze'); })
+    .catch(() => showToast('Could not load sample.'));
+}
+
+function resetResult() {
+  document.getElementById('diagCard').className = 'diag-card waiting';
+  document.getElementById('diagIcon').className = 'diag-icon waiting';
+  document.getElementById('diagTitle').className = 'diag-title waiting';
+  document.getElementById('diagTitle').textContent = 'Ready to analyze';
+  document.getElementById('diagSub').textContent = 'Click Analyze X-Ray to run inference';
+  ['barNormal','barPneumonia','uFill'].forEach(id => document.getElementById(id).style.width = '0');
+  ['pctNormal','pctPneumonia','mLatency','mConf','mUnc'].forEach(id => document.getElementById(id).textContent = '—');
+  document.getElementById('uBadge').textContent = '—';
+  document.getElementById('uBadge').className = 'u-badge';
+  document.getElementById('uFill').className = 'u-fill';
+  document.getElementById('triageText').textContent = 'Run inference to see clinical triage recommendation';
+  document.getElementById('triageDot').style.background = 'var(--text3)';
+}
+
+async function analyze() {
+  if (!selectedFile) return;
+  document.getElementById('btnAnalyze').disabled = true;
+  document.getElementById('loadingOverlay').classList.add('visible');
+  document.getElementById('resultSection').style.opacity = '0.3';
+  const form = new FormData();
+  form.append('file', selectedFile);
+  try {
+    const res = await fetch(`${API}/predict`, {method:'POST', body:form});
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    showResult(await res.json());
+  } catch(err) {
+    showToast('Error: ' + err.message + ' — is Triton + FastAPI running?');
+  } finally {
+    document.getElementById('btnAnalyze').disabled = false;
+    document.getElementById('loadingOverlay').classList.remove('visible');
+    document.getElementById('resultSection').style.opacity = '1';
+  }
+}
+
+function showResult(data) {
+  const isPneu = data.prediction === 'PNEUMONIA';
+  const nPct   = parseFloat(data.NORMAL);
+  const pPct   = parseFloat(data.PNEUMONIA);
+  const lat    = parseFloat(data.latency_ms).toFixed(2);
+  const conf   = parseFloat(data.confidence);
+  const unc    = data.uncertainty_score || 0;
+
+  const card  = document.getElementById('diagCard');
+  const icon  = document.getElementById('diagIcon');
+  const title = document.getElementById('diagTitle');
+  const sub   = document.getElementById('diagSub');
+
+  if (isPneu) {
+    card.className  = 'diag-card pneumonia';
+    icon.className  = 'diag-icon pneumonia';
+    icon.innerHTML  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+    title.className = 'diag-title pneumonia';
+    title.textContent = 'Pneumonia Detected';
+    sub.textContent   = 'Recommend clinical review and further testing';
+  } else {
+    card.className  = 'diag-card normal';
+    icon.className  = 'diag-icon normal';
+    icon.innerHTML  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>';
+    title.className = 'diag-title normal';
+    title.textContent = 'Normal — No Findings';
+    sub.textContent   = 'No signs of pneumonia detected in this X-ray';
   }
 
-  function loadSample() {
-    showToast('Loading sample X-ray...');
-    fetch('https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Normal_posteroanterior_%28PA%29_chest_radiograph_%28X-ray%29.jpg/800px-Normal_posteroanterior_%28PA%29_chest_radiograph_%28X-ray%29.jpg')
-      .then(r => r.blob())
-      .then(blob => {
-        const file = new File([blob], 'sample_xray.jpg', { type: 'image/jpeg' });
-        setFile(file);
-        showToast('Sample loaded — click Analyze');
-      })
-      .catch(() => showToast('Could not load sample. Upload your own image.'));
-  }
+  const uPct  = Math.round(unc * 100);
+  const badge = document.getElementById('uBadge');
+  const fill  = document.getElementById('uFill');
+  let cls = 'hc', dot = 'var(--success)';
+  if (unc >= 0.7)      { cls = 'lc'; dot = 'var(--danger)'; }
+  else if (unc >= 0.4) { cls = 'mc'; dot = 'var(--warn)'; }
+  badge.textContent = data.uncertainty_label || 'Unknown';
+  badge.className   = 'u-badge ' + cls;
+  fill.className    = 'u-fill ' + cls;
+  document.getElementById('triageDot').style.background = dot;
+  document.getElementById('triageText').textContent = data.triage || '—';
 
-  function resetResult() {
-    document.getElementById('diagnosisCard').className = 'diagnosis-card waiting';
-    document.getElementById('diagnosisIcon').className = 'diagnosis-icon waiting';
-    document.getElementById('diagnosisTitle').className = 'diagnosis-title waiting';
-    document.getElementById('diagnosisTitle').textContent = 'Ready to analyze';
-    document.getElementById('diagnosisSub').textContent = 'Click Analyze X-Ray to run inference';
-    document.getElementById('barNormal').style.width = '0';
-    document.getElementById('barPneumonia').style.width = '0';
-    document.getElementById('pctNormal').textContent = '—';
-    document.getElementById('pctPneumonia').textContent = '—';
-    document.getElementById('metricLatency').textContent = '—';
-    document.getElementById('metricConf').textContent = '—';
-  }
+  setTimeout(() => {
+    document.getElementById('barNormal').style.width    = nPct.toFixed(1) + '%';
+    document.getElementById('barPneumonia').style.width = pPct.toFixed(1) + '%';
+    fill.style.width = uPct + '%';
+  }, 50);
 
-  async function analyze() {
-    if (!selectedFile) return;
-    btnAnalyze.disabled = true;
-    document.getElementById('loadingOverlay').classList.add('visible');
-    document.getElementById('resultSection').style.opacity = '0.3';
+  document.getElementById('pctNormal').textContent   = nPct.toFixed(1) + '%';
+  document.getElementById('pctPneumonia').textContent = pPct.toFixed(1) + '%';
+  document.getElementById('mLatency').textContent    = lat;
+  document.getElementById('mConf').textContent       = conf.toFixed(1) + '%';
+  document.getElementById('mUnc').textContent        = uPct + '%';
+}
 
-    const form = new FormData();
-    form.append('file', selectedFile);
-
-    try {
-      const res = await fetch(`${API}/predict`, { method: 'POST', body: form });
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
-      const data = await res.json();
-      showResult(data);
-    } catch(err) {
-      showToast('Error: ' + err.message + ' — is Triton + FastAPI running?');
-    } finally {
-      btnAnalyze.disabled = false;
-      document.getElementById('loadingOverlay').classList.remove('visible');
-      document.getElementById('resultSection').style.opacity = '1';
-    }
-  }
-
-  function showResult(data) {
-    const isPneumonia = data.prediction === 'PNEUMONIA';
-    const conf = parseFloat(data.confidence);
-    const normalPct = parseFloat(data.NORMAL);
-    const pneumPct  = parseFloat(data.PNEUMONIA);
-    const latency   = parseFloat(data.latency_ms).toFixed(2);
-
-    const card  = document.getElementById('diagnosisCard');
-    const icon  = document.getElementById('diagnosisIcon');
-    const title = document.getElementById('diagnosisTitle');
-    const sub   = document.getElementById('diagnosisSub');
-
-    if (isPneumonia) {
-      card.className  = 'diagnosis-card pneumonia';
-      icon.className  = 'diagnosis-icon pneumonia';
-      icon.innerHTML  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
-      title.className = 'diagnosis-title pneumonia';
-      title.textContent = 'Pneumonia Detected';
-      sub.textContent   = 'Recommend clinical review and further testing';
-    } else {
-      card.className  = 'diagnosis-card normal';
-      icon.className  = 'diagnosis-icon normal';
-      icon.innerHTML  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>';
-      title.className = 'diagnosis-title normal';
-      title.textContent = 'Normal — No Findings';
-      sub.textContent   = 'No signs of pneumonia detected in this X-ray';
-    }
-
-    setTimeout(() => {
-      document.getElementById('barNormal').style.width     = normalPct.toFixed(1) + '%';
-      document.getElementById('barPneumonia').style.width  = pneumPct.toFixed(1) + '%';
-    }, 50);
-
-    document.getElementById('pctNormal').textContent    = normalPct.toFixed(1) + '%';
-    document.getElementById('pctPneumonia').textContent = pneumPct.toFixed(1) + '%';
-    document.getElementById('metricLatency').textContent = latency;
-    document.getElementById('metricConf').textContent    = conf.toFixed(1) + '%';
-  }
-
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('visible');
-    setTimeout(() => t.classList.remove('visible'), 3000);
-  }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  setTimeout(() => t.classList.remove('visible'), 3000);
+}
 </script>
 </body>
 </html>

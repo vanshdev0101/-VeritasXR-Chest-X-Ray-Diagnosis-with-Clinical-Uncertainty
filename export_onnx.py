@@ -1,27 +1,29 @@
 import torch
-import torch.nn as nn
-import torchvision.models as models
 import os
+from veritasxr_model import get_model
 
 os.makedirs("models", exist_ok=True)
 
-print("Loading fine-tuned chest X-ray model...")
-model = models.resnet50(weights=None)
-model.fc = nn.Linear(model.fc.in_features, 2)
-model.load_state_dict(torch.load("models/resnet50_xray.pth"))
+print("Loading VeritasXR model...")
+model = get_model()
+model.load_state_dict(torch.load("models/veritasxr.pth"))
 model.eval().cuda()
 
-dummy_input = torch.randn(1, 3, 224, 224).cuda()
+dummy_input = torch.randn(1, 1, 224, 224).cuda()
 
 print("Exporting to ONNX...")
 torch.onnx.export(
-    model,
+    model,                          # export full model, no wrapper
     dummy_input,
-    "models/resnet50.onnx",
+    "models/veritasxr.onnx",
     export_params=True,
     opset_version=17,
     input_names=["input"],
-    output_names=["output"],
-    dynamic_axes={"input": {0: "batch_size"}, "output": {0: "batch_size"}}
+    output_names=["verdict", "uncertainty"],   # both outputs, correct names
+    dynamic_axes={
+        "input":       {0: "batch_size"},
+        "verdict":     {0: "batch_size"},
+        "uncertainty": {0: "batch_size"}
+    }
 )
-print("Done! Saved to models/resnet50.onnx")
+print("Done! Saved to models/veritasxr.onnx")

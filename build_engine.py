@@ -4,8 +4,8 @@ import os
 os.makedirs("models", exist_ok=True)
 
 TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
-ONNX_PATH  = "models/resnet50.onnx"
-ENGINE_PATH = "models/resnet50_fp16.trt"
+ONNX_PATH  = "models/veritasxr.onnx"
+ENGINE_PATH = "models/veritasxr_fp16.trt"
 
 print("Building TensorRT FP16 engine... (this takes ~5-15 mins)")
 
@@ -24,7 +24,7 @@ config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, 2 << 30)  # 2GB
 config.set_flag(trt.BuilderFlag.FP16)
 
 profile = builder.create_optimization_profile()
-profile.set_shape("input", (1,3,224,224), (8,3,224,224), (16,3,224,224))
+profile.set_shape("input", (1,1,224,224), (8,1,224,224), (16,1,224,224))
 config.add_optimization_profile(profile)
 
 print("Compiling...")
