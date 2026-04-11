@@ -316,17 +316,8 @@ git commit -m "remove dataset from tracking"
 | CUDA | 12.x |
 | Dataset | Kaggle Chest X-Ray (Pneumonia) — 5,216 train / 624 test |
 
----
 
-## Team
-
-| Name | Roll No | Contribution |
-|---|---|---|
-| Vansh C | RA2311026010114 | VeritasXR architecture + Triton deployment |
-| Aditya Joshi | RA2311026010129 | ONNX export + TensorRT engine build |
-| Hirav Kadikar | RA2311026010111 | Benchmarking + stress testing + analysis |
-| Anjany Kumar Jaiswal | RA2311026010006 | FastAPI backend + frontend demo |
 
 ---
 
-*SEAI Project · 2026 · Accelerating Neural Network Inferencing: TensorRT & Triton Inference Server*
+ 
