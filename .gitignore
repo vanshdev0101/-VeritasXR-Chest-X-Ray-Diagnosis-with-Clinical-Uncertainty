@@ -1,17 +1,31 @@
 # Dataset
 data/
 
-# Models
+# Results (charts and analysis images)
+results/
+
+# Models — weights, engines, exports
 models/
+triton_models/
+
+# Large file extensions anywhere in repo
 *.pth
 *.onnx
 *.trt
 *.plan
-
-# Triton
-triton_models/veritasxr/1/model.onnx
+*.pt
+*.bin
+*.h5
 
 # Python
 __pycache__/
 *.pyc
+*.pyo
 .env
+
+# System
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
