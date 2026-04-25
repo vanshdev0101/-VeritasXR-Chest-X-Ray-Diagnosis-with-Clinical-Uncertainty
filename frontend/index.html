@@ -1,360 +1,458 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VeritasXR — Chest X-Ray AI</title>
+<title>VeritasXR</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg:#f5f6fa; --bg2:#ffffff; --bg3:#eef0f6;
-    --border:rgba(0,0,0,0.08); --border2:rgba(0,0,0,0.13);
-    --text:#1a1a2e; --text2:#5a5a78; --text3:#9090a8;
-    --accent:#5b52e8; --accent2:#0f9e75;
-    --danger:#d63a3a; --success:#0f9e75; --warn:#c97a10;
-    --pill-bg:rgba(91,82,232,0.08); --pill-col:#5b52e8;
-  }
-  [data-theme="dark"] {
-    --bg:#0a0a0f; --bg2:#111118; --bg3:#1a1a24;
-    --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.14);
-    --text:#f0f0f5; --text2:#9090a8; --text3:#5a5a70;
-    --accent:#6c63ff; --accent2:#4ecca3;
-    --danger:#ff6b6b; --success:#4ecca3; --warn:#ffa94d;
-    --pill-bg:rgba(108,99,255,0.15); --pill-col:#a09fff;
-  }
-  body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; min-height:100vh; transition:background 0.25s,color 0.25s; }
-  .navbar { display:flex; align-items:center; justify-content:space-between; padding:0 32px; height:56px; border-bottom:1px solid var(--border); background:var(--bg2); }
-  .nav-logo { display:flex; align-items:center; gap:10px; font-size:15px; font-weight:600; letter-spacing:-0.3px; color:var(--text); }
-  .nav-logo-dot { width:8px; height:8px; border-radius:50%; background:var(--accent2); }
-  .nav-right { display:flex; align-items:center; gap:8px; }
-  .nav-pills { display:flex; gap:6px; }
-  .nav-pill { font-size:12px; padding:3px 10px; border-radius:20px; border:1px solid var(--border2); color:var(--text2); }
-  .nav-pill.active { background:var(--pill-bg); border-color:transparent; color:var(--pill-col); }
-  .theme-btn { width:34px; height:34px; border-radius:8px; border:1px solid var(--border2); background:var(--bg3); cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text2); transition:background 0.2s; }
-  .theme-btn:hover { background:var(--border); }
-  .theme-btn svg { width:16px; height:16px; }
-  .i-sun { display:none; } .i-moon { display:block; }
-  [data-theme="dark"] .i-sun { display:block; } [data-theme="dark"] .i-moon { display:none; }
-  .hero { text-align:center; padding:44px 32px 28px; }
-  .hero-badge { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--accent2); border:1px solid rgba(15,158,117,0.25); background:rgba(15,158,117,0.08); padding:4px 12px; border-radius:20px; margin-bottom:16px; }
-  [data-theme="dark"] .hero-badge { border-color:rgba(78,204,163,0.25); background:rgba(78,204,163,0.08); }
-  .badge-dot { width:6px; height:6px; border-radius:50%; background:var(--accent2); animation:pulse 2s ease-in-out infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  .hero h1 { font-size:30px; font-weight:700; letter-spacing:-0.8px; line-height:1.2; margin-bottom:10px; color:var(--text); }
-  .hero h1 span { color:var(--accent2); }
-  .hero p { font-size:14px; color:var(--text2); max-width:500px; margin:0 auto; line-height:1.6; }
-  .stats-bar { display:flex; margin:24px auto; max-width:700px; border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--bg2); }
-  .stat-item { flex:1; padding:14px 12px; text-align:center; border-right:1px solid var(--border); }
-  .stat-item:last-child { border-right:none; }
-  .stat-val { font-size:19px; font-weight:700; letter-spacing:-0.5px; }
-  .teal { color:var(--accent2); } .purple { color:var(--accent); } .amber { color:var(--warn); } .red { color:var(--danger); }
-  .stat-lbl { font-size:11px; color:var(--text3); margin-top:2px; text-transform:uppercase; letter-spacing:0.06em; }
-  .main-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:980px; margin:0 auto; padding:0 24px 40px; }
-  .panel { background:var(--bg2); border:1px solid var(--border); border-radius:16px; padding:20px; }
-  .panel-label { font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:14px; }
-  .upload-zone { border:1.5px dashed var(--border2); border-radius:12px; padding:28px 16px; text-align:center; cursor:pointer; transition:border-color 0.2s,background 0.2s; margin-bottom:14px; }
-  .upload-zone:hover { border-color:var(--accent); background:rgba(91,82,232,0.04); }
-  .upload-zone.dragover { border-color:var(--accent2); background:rgba(15,158,117,0.05); }
-  .upload-icon { width:36px; height:36px; margin:0 auto 10px; border-radius:10px; background:rgba(91,82,232,0.1); display:flex; align-items:center; justify-content:center; }
-  [data-theme="dark"] .upload-icon { background:rgba(108,99,255,0.12); }
-  .upload-icon svg { width:18px; height:18px; color:var(--accent); }
-  .upload-zone p { font-size:13px; color:var(--text2); margin-bottom:4px; }
-  .upload-zone span { font-size:11px; color:var(--text3); }
-  .preview-box { width:100%; aspect-ratio:1; background:var(--bg3); border-radius:10px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:14px; border:1px solid var(--border); }
-  .preview-box img { width:100%; height:100%; object-fit:contain; }
-  .preview-placeholder svg { width:40px; height:40px; color:var(--text3); }
-  #fileInput { display:none; }
-  .btn-analyze { width:100%; padding:11px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; transition:opacity 0.2s,transform 0.1s; }
-  .btn-analyze:hover { opacity:0.88; } .btn-analyze:active { transform:scale(0.98); } .btn-analyze:disabled { opacity:0.35; cursor:not-allowed; }
-  .btn-sample { width:100%; padding:9px; background:transparent; color:var(--text2); border:1px solid var(--border2); border-radius:10px; font-size:13px; cursor:pointer; margin-top:8px; transition:background 0.2s,color 0.2s; }
-  .btn-sample:hover { background:var(--bg3); color:var(--text); }
-  .diag-card { border-radius:12px; padding:14px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px; }
-  .diag-card.normal   { background:rgba(15,158,117,0.08); border:1px solid rgba(15,158,117,0.22); }
-  .diag-card.pneumonia { background:rgba(214,58,58,0.08); border:1px solid rgba(214,58,58,0.22); }
-  .diag-card.waiting  { background:var(--bg3); border:1px solid var(--border); }
-  [data-theme="dark"] .diag-card.normal    { background:rgba(78,204,163,0.1); border-color:rgba(78,204,163,0.25); }
-  [data-theme="dark"] .diag-card.pneumonia { background:rgba(255,107,107,0.1); border-color:rgba(255,107,107,0.25); }
-  .diag-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .diag-icon svg { width:20px; height:20px; }
-  .diag-icon.normal    { background:rgba(15,158,117,0.15); color:var(--success); }
-  .diag-icon.pneumonia { background:rgba(214,58,58,0.15);  color:var(--danger); }
-  .diag-icon.waiting   { background:var(--bg3); color:var(--text3); }
-  .diag-title { font-size:16px; font-weight:700; letter-spacing:-0.3px; }
-  .diag-title.normal    { color:var(--success); } .diag-title.pneumonia { color:var(--danger); } .diag-title.waiting { color:var(--text2); }
-  .diag-sub { font-size:12px; color:var(--text2); margin-top:2px; }
-  .u-card { border-radius:10px; padding:12px 14px; margin-bottom:14px; border:1px solid var(--border); background:var(--bg3); }
-  .u-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-  .u-label { font-size:12px; color:var(--text2); }
-  .u-badge { font-size:11px; font-weight:600; padding:2px 8px; border-radius:8px; }
-  .u-badge.hc { background:rgba(15,158,117,0.12); color:var(--success); }
-  .u-badge.mc { background:rgba(201,122,16,0.12);  color:var(--warn); }
-  .u-badge.lc { background:rgba(214,58,58,0.12);   color:var(--danger); }
-  [data-theme="dark"] .u-badge.hc { background:rgba(78,204,163,0.15); }
-  [data-theme="dark"] .u-badge.mc { background:rgba(255,169,77,0.15); }
-  [data-theme="dark"] .u-badge.lc { background:rgba(255,107,107,0.15); }
-  .u-track { height:5px; background:var(--border); border-radius:3px; overflow:hidden; margin-bottom:6px; }
-  .u-fill { height:5px; border-radius:3px; transition:width 0.6s cubic-bezier(0.4,0,0.2,1); width:0; }
-  .u-fill.hc { background:var(--success); } .u-fill.mc { background:var(--warn); } .u-fill.lc { background:var(--danger); }
-  .triage-row { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text3); }
-  .triage-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
-  .conf-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
-  .conf-name { font-size:13px; color:var(--text2); width:90px; flex-shrink:0; }
-  .conf-track { flex:1; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
-  .conf-fill { height:5px; border-radius:3px; transition:width 0.6s cubic-bezier(0.4,0,0.2,1); width:0; }
-  .cf-normal { background:var(--success); } .cf-pneum { background:var(--danger); }
-  .conf-pct { font-size:12px; font-weight:600; width:38px; text-align:right; }
-  .metrics-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:18px; }
-  .metric-card { background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px 10px; text-align:center; }
-  .metric-val { font-size:20px; font-weight:700; letter-spacing:-0.5px; }
-  .metric-lbl { font-size:11px; color:var(--text3); margin-top:3px; }
-  .speed-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--border); }
-  .speed-row:last-child { border-bottom:none; }
-  .speed-label { font-size:12px; color:var(--text2); width:130px; flex-shrink:0; }
-  .speed-tag { font-size:10px; font-weight:600; padding:1px 6px; border-radius:8px; margin-left:4px; background:rgba(15,158,117,0.12); color:var(--success); }
-  [data-theme="dark"] .speed-tag { background:rgba(78,204,163,0.15); }
-  .speed-track { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
-  .speed-fill { height:6px; border-radius:3px; }
-  .sf-resnet { background:#d63a3a; width:100%; } .sf-vxpt { background:var(--accent); width:46%; } .sf-vxtrt { background:var(--accent2); width:14%; }
-  .speed-ms { font-size:12px; font-weight:600; width:48px; text-align:right; }
-  .sm-resnet { color:var(--danger); } .sm-vxpt { color:var(--accent); } .sm-vxtrt { color:var(--accent2); }
-  .loading-overlay { display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:40px; }
-  .loading-overlay.visible { display:flex; }
-  .spinner { width:32px; height:32px; border:2px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  .loading-text { font-size:13px; color:var(--text2); }
-  .footer { text-align:center; padding:20px; border-top:1px solid var(--border); font-size:12px; color:var(--text3); }
-  .footer span { color:var(--text2); }
-  .toast { display:none; position:absolute; bottom:24px; left:50%; transform:translateX(-50%); background:var(--bg2); border:1px solid var(--border2); border-radius:10px; padding:10px 20px; font-size:13px; color:var(--text); z-index:100; }
-  .toast.visible { display:block; animation:fadeup 0.3s ease; }
-  @keyframes fadeup { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:      #f5f0e8;
+  --surface: #ede8df;
+  --raised:  #e4ddd3;
+  --card:    #faf8f4;
+  --line:    rgba(60,45,20,0.1);
+  --line2:   rgba(60,45,20,0.17);
+  --text:    #1c1812;
+  --muted:   #000000;
+  --faint:   #080808;
+  --ink:     #2d2318;
+  --rust:    #c0512a;
+  --rust-bg: rgba(192,81,42,0.08);
+  --rust-bd: rgba(192,81,42,0.22);
+  --sage:    #4a7c59;
+  --sage-bg: rgba(74,124,89,0.08);
+  --sage-bd: rgba(74,124,89,0.22);
+  --gold:    #a87228;
+  --gold-bg: rgba(168,114,40,0.09);
+  --gold-bd: rgba(168,114,40,0.25);
+  --red:     #b53a2a;
+  --red-bg:  rgba(181,58,42,0.08);
+  --red-bd:  rgba(181,58,42,0.2);
+  --mono:    'Geist Mono', monospace;
+  --sans:    'Geist', sans-serif;
+}
+html,body { min-height:100vh; }
+body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14px; line-height:1.5; }
+
+nav {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 36px; height:54px;
+  background:var(--card); border-bottom:1px solid var(--line2);
+}
+.wm { font-size:15px; font-weight:700; letter-spacing:-0.4px; color:var(--ink); display:flex; align-items:center; gap:9px; }
+.wm-ico { width:26px; height:26px; border-radius:6px; background:var(--ink); display:grid; place-items:center; font-family:var(--mono); font-size:10px; color:var(--bg); }
+.nav-live { display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11px; color:var(--sage); }
+.live-dot { width:6px; height:6px; border-radius:50%; background:var(--sage); animation:blink 2.5s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 55%{opacity:0.2} }
+
+.wrap { max-width:1180px; margin:0 auto; padding:40px 36px 72px; }
+
+.pg-head { margin-bottom:36px; }
+.pg-head h1 { font-size:26px; font-weight:700; letter-spacing:-0.7px; color:var(--ink); margin-bottom:7px; }
+.pg-head p  { font-size:14px; color:var(--muted); max-width:540px; line-height:1.7; }
+
+.top { display:grid; grid-template-columns:1fr 300px; gap:16px; margin-bottom:16px; align-items:start; }
+
+.card { background:var(--card); border:1px solid var(--line2); border-radius:14px; padding:22px 24px; }
+.clabel { font-family:var(--mono); font-size:10px; font-weight:500; color:var(--faint); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:16px; }
+
+.grp-lbl { font-family:var(--mono); font-size:10px; color:var(--faint); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; margin-top:14px; }
+.grp-lbl:first-child { margin-top:0; }
+.divider { height:1px; background:var(--line); margin:12px 0 4px; }
+
+.mrow {
+  display:flex; align-items:center; gap:13px;
+  padding:10px 13px; border-radius:9px;
+  border:1px solid transparent;
+  cursor:pointer; margin-bottom:4px;
+  transition:background 0.12s, border-color 0.12s;
+  background:var(--surface);
+}
+.mrow:hover { background:var(--raised); }
+.mrow.sel   { background:var(--gold-bg); border-color:var(--gold-bd); }
+.mrow input { display:none; }
+
+.rring { width:16px; height:16px; border-radius:50%; border:1.5px solid var(--faint); flex-shrink:0; display:grid; place-items:center; transition:border-color 0.12s; }
+.mrow.sel .rring { border-color:var(--gold); }
+.rring::after { content:''; width:7px; height:7px; border-radius:50%; background:var(--gold); opacity:0; transition:opacity 0.12s; }
+.mrow.sel .rring::after { opacity:1; }
+
+.mbody { flex:1; min-width:0; }
+.mname { font-size:13px; font-weight:500; color:var(--text); }
+.mmeta { font-family:var(--mono); font-size:10px; color:var(--faint); margin-top:2px; }
+.mrow.sel .mmeta { color:var(--gold); }
+
+.pill { font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:20px; flex-shrink:0; }
+.p-custom { background:var(--rust-bg); color:var(--rust); border:1px solid var(--rust-bd); }
+.p-best   { background:var(--sage-bg); color:var(--sage); border:1px solid var(--sage-bd); }
+.p-n      { background:var(--raised);  color:var(--faint); border:1px solid var(--line2); }
+
+.upload-col { display:flex; flex-direction:column; gap:14px; }
+
+.drop { border:1.5px dashed var(--line2); border-radius:10px; padding:26px 16px; text-align:center; cursor:pointer; transition:all 0.15s; }
+.drop:hover,.drop.over { border-color:var(--gold); background:var(--gold-bg); }
+.drop p { font-size:13px; color:var(--muted); margin-bottom:3px; }
+.drop small { font-family:var(--mono); font-size:10px; color:var(--faint); }
+#fileInput { display:none; }
+
+.prev { width:100%; aspect-ratio:4/3; background:var(--surface); border-radius:10px; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.prev img { width:100%; height:100%; object-fit:contain; display:none; }
+.prev svg { width:36px; height:36px; color:var(--faint); }
+
+.btn-run { width:100%; padding:12px; background:var(--ink); color:var(--bg); border:none; border-radius:9px; font-family:var(--sans); font-size:14px; font-weight:600; cursor:pointer; letter-spacing:-0.2px; transition:opacity 0.15s,transform 0.1s; }
+.btn-run:hover { opacity:0.85; }
+.btn-run:active { transform:scale(0.99); }
+.btn-run:disabled { opacity:0.25; cursor:not-allowed; }
+.btn-ghost { width:100%; padding:10px; background:transparent; color:var(--muted); border:1px solid var(--line2); border-radius:9px; font-size:13px; cursor:pointer; transition:all 0.15s; }
+.btn-ghost:hover { background:var(--surface); color:var(--text); }
+
+.bento { display:grid; grid-template-columns:repeat(12,1fr); gap:14px; }
+
+.b-diag { grid-column:span 12; }
+.b-m    { grid-column:span 3; }
+.b-prob { grid-column:span 5; }
+.b-unc  { grid-column:span 4; }
+.b-spd  { grid-column:span 3; }
+.b-tbl  { grid-column:span 12; }
+
+.diag-inner { display:flex; align-items:center; gap:18px; }
+.diag-ico { width:50px; height:50px; border-radius:12px; display:grid; place-items:center; flex-shrink:0; background:var(--surface); color:var(--faint); }
+.diag-ico svg { width:24px; height:24px; }
+.diag-ico.normal    { background:var(--sage-bg); color:var(--sage); }
+.diag-ico.pneumonia { background:var(--red-bg);  color:var(--red); }
+.diag-h { font-size:19px; font-weight:700; letter-spacing:-0.4px; color:var(--muted); }
+.diag-h.normal    { color:var(--sage); }
+.diag-h.pneumonia { color:var(--red); }
+.diag-sub { font-size:13px; color:var(--muted); margin-top:3px; }
+.diag-mod { font-family:var(--mono); font-size:10px; color:var(--faint); margin-top:5px; }
+
+.load-row { display:none; align-items:center; gap:10px; margin-left:auto; }
+.load-row.show { display:flex; }
+.spin { width:16px; height:16px; flex-shrink:0; border:2px solid var(--line2); border-top-color:var(--gold); border-radius:50%; animation:spin 0.6s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.spin-lbl { font-family:var(--mono); font-size:11px; color:var(--muted); }
+
+.mn { font-size:24px; font-weight:700; letter-spacing:-0.8px; color:var(--ink); margin-bottom:5px; }
+.ml { font-family:var(--mono); font-size:10px; color:var(--faint); text-transform:uppercase; letter-spacing:0.07em; }
+
+.prow { display:flex; align-items:center; gap:10px; margin-bottom:11px; }
+.prow:last-child { margin-bottom:0; }
+.plbl { font-size:13px; color:var(--muted); width:76px; flex-shrink:0; }
+.ptrack { flex:1; height:5px; background:var(--raised); border-radius:3px; overflow:hidden; }
+.pfill  { height:5px; border-radius:3px; width:0; transition:width 0.65s cubic-bezier(0.4,0,0.2,1); }
+.pf-n { background:var(--sage); }
+.pf-p { background:var(--red); }
+.ppct { font-family:var(--mono); font-size:12px; width:40px; text-align:right; }
+
+.unc-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:11px; }
+.unc-lbl { font-size:13px; font-weight:500; }
+.badge { font-family:var(--mono); font-size:10px; padding:3px 9px; border-radius:20px; }
+.b-hc { background:var(--sage-bg); color:var(--sage); border:1px solid var(--sage-bd); }
+.b-mc { background:var(--gold-bg); color:var(--gold); border:1px solid var(--gold-bd); }
+.b-lc { background:var(--red-bg);  color:var(--red);  border:1px solid var(--red-bd); }
+.b-na { background:var(--surface); color:var(--faint); border:1px solid var(--line2); }
+.utrack { height:4px; background:var(--raised); border-radius:2px; overflow:hidden; margin-bottom:10px; }
+.ufill  { height:4px; border-radius:2px; width:0; transition:width 0.65s cubic-bezier(0.4,0,0.2,1); }
+.uf-hc { background:var(--sage); }
+.uf-mc { background:var(--gold); }
+.uf-lc { background:var(--red); }
+.triage { display:flex; align-items:flex-start; gap:7px; font-size:12px; color:var(--muted); line-height:1.55; }
+.trdot { width:5px; height:5px; border-radius:50%; background:var(--faint); flex-shrink:0; margin-top:4px; }
+
+.spd-row { display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--line); }
+.spd-row:last-child { border-bottom:none; }
+.spd-l { font-size:12px; color:var(--muted); }
+.spd-v { font-family:var(--mono); font-size:12px; }
+
+table.cmp { width:100%; border-collapse:collapse; }
+table.cmp th { font-family:var(--mono); font-size:10px; color:var(--faint); text-align:left; padding:7px 12px; border-bottom:1px solid var(--line2); text-transform:uppercase; letter-spacing:0.07em; font-weight:400; }
+table.cmp td { padding:9px 12px; font-size:13px; border-bottom:1px solid var(--line); vertical-align:middle; }
+table.cmp tr:last-child td { border-bottom:none; }
+table.cmp tr.hl td { background:var(--gold-bg); }
+table.cmp tr.hl td:first-child { border-left:2px solid var(--gold); padding-left:10px; }
+.mono { font-family:var(--mono); font-size:11px; color:var(--muted); }
+.ti { font-family:var(--mono); font-size:10px; padding:1px 6px; border-radius:20px; margin-left:6px; }
+.ti-g { background:var(--sage-bg); color:var(--sage); }
+.ti-r { background:var(--rust-bg); color:var(--rust); }
+.acell { display:flex; align-items:center; gap:8px; }
+.atrack { width:60px; height:4px; background:var(--raised); border-radius:2px; overflow:hidden; flex-shrink:0; }
+.abar   { height:4px; background:var(--gold); border-radius:2px; }
+
+.toast { display:none; position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--bg); border-radius:8px; padding:10px 20px; font-family:var(--mono); font-size:12px; z-index:200; white-space:nowrap; }
+.toast.show { display:block; animation:up 0.2s ease; }
+@keyframes up { from{opacity:0;transform:translateX(-50%) translateY(5px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
 </style>
 </head>
 <body>
 
-<nav class="navbar">
-  <div class="nav-logo">
-    <div class="nav-logo-dot"></div>
+<nav>
+  <div class="wm">
+    <div class="wm-ico">VX</div>
     VeritasXR
   </div>
-  <div class="nav-right">
-    <div class="nav-pills">
-      <div class="nav-pill active">TensorRT FP16</div>
-      <div class="nav-pill">Dual-Pathway CNN</div>
-      <div class="nav-pill">Uncertainty-Aware</div>
-      <div class="nav-pill">RTX 3070</div>
-    </div>
-    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">
-      <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/></svg>
-      <svg class="i-sun"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-    </button>
-  </div>
+  <div class="nav-live"><div class="live-dot"></div>Triton live</div>
 </nav>
 
-<div class="hero">
-  <div class="hero-badge"><div class="badge-dot"></div>Triton Inference Server · Live</div>
-  <h1>VeritasXR <span>Clinical AI</span></h1>
-  <p>A custom dual-pathway architecture for chest X-ray pneumonia detection — with uncertainty estimation for clinical triage. Built from scratch, optimized with TensorRT.</p>
-</div>
+<div class="wrap">
 
-<div class="stats-bar">
-  <div class="stat-item"><div class="stat-val teal">7.2x</div><div class="stat-lbl">Speedup vs ResNet</div></div>
-  <div class="stat-item"><div class="stat-val purple">2.53ms</div><div class="stat-lbl">Inference time</div></div>
-  <div class="stat-item"><div class="stat-val amber">17M</div><div class="stat-lbl">Parameters</div></div>
-  <div class="stat-item"><div class="stat-val teal">395</div><div class="stat-lbl">Images / second</div></div>
-  <div class="stat-item"><div class="stat-val red">Triage</div><div class="stat-lbl">Uncertainty-aware</div></div>
-</div>
-
-<div class="main-grid">
-  <div class="panel">
-    <div class="panel-label">Input</div>
-    <div class="upload-zone" id="uploadZone">
-      <div class="upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
-      <p>Drop a chest X-ray here</p>
-      <span>JPEG or PNG · any resolution</span>
-    </div>
-    <input type="file" id="fileInput" accept="image/*">
-    <div class="preview-box">
-      <div class="preview-placeholder" id="previewPh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div>
-      <img id="previewImg" style="display:none;" alt="X-ray preview">
-    </div>
-    <button class="btn-analyze" id="btnAnalyze" disabled onclick="analyze()">Analyze X-Ray</button>
-    <button class="btn-sample" onclick="loadSample()">Load sample X-ray</button>
+  <div class="pg-head">
+    <h1>Chest X-Ray Diagnosis</h1>
+    <p>Select a model from the list, upload a chest X-ray, and run inference. Compare VeritasXR against ResNet50 fine-tuned at six different depths.</p>
   </div>
 
-  <div class="panel">
-    <div class="panel-label">Diagnosis</div>
-    <div id="loadingOverlay" class="loading-overlay">
-      <div class="spinner"></div>
-      <div class="loading-text">Running VeritasXR via Triton...</div>
+  <div class="top">
+
+    <!-- Model list -->
+    <div class="card">
+      <div class="clabel">Select model</div>
+
+      <div class="grp-lbl">Custom architecture</div>
+      <label class="mrow sel" data-id="veritasxr">
+        <input type="radio" name="model" value="veritasxr" checked>
+        <div class="rring"></div>
+        <div class="mbody">
+          <div class="mname">VeritasXR</div>
+          <div class="mmeta">Dual-path CNN · Uncertainty head · 17M params · 75.6% acc</div>
+        </div>
+        <span class="pill p-custom">Custom</span>
+      </label>
+
+      <div class="divider"></div>
+      <div class="grp-lbl">ResNet50 — fine-tuning depth</div>
+
+      <label class="mrow" data-id="resnet_l1">
+        <input type="radio" name="model" value="resnet_l1">
+        <div class="rring"></div>
+        <div class="mbody"><div class="mname">FC layer only</div><div class="mmeta">4K trainable · 84.3% acc · F1 0.882</div></div>
+        <span class="pill p-n">L1</span>
+      </label>
+      <label class="mrow" data-id="resnet_l2">
+        <input type="radio" name="model" value="resnet_l2">
+        <div class="rring"></div>
+        <div class="mbody"><div class="mname">Layer 4 + FC</div><div class="mmeta">14.9M trainable · 72.9% acc · F1 0.822</div></div>
+        <span class="pill p-n">L2</span>
+      </label>
+      <label class="mrow" data-id="resnet_l3">
+        <input type="radio" name="model" value="resnet_l3">
+        <div class="rring"></div>
+        <div class="mbody"><div class="mname">Layers 3–4 + FC</div><div class="mmeta">22M trainable · 81.3% acc · F1 0.869</div></div>
+        <span class="pill p-n">L3</span>
+      </label>
+      <label class="mrow" data-id="resnet_l4">
+        <input type="radio" name="model" value="resnet_l4">
+        <div class="rring"></div>
+        <div class="mbody"><div class="mname">Layers 2–4 + FC</div><div class="mmeta">23.2M trainable · 86.4% acc · F1 0.900</div></div>
+        <span class="pill p-n">L4</span>
+      </label>
+      <label class="mrow" data-id="resnet_l5">
+        <input type="radio" name="model" value="resnet_l5">
+        <div class="rring"></div>
+        <div class="mbody"><div class="mname">Layers 1–4 + FC</div><div class="mmeta">23.5M trainable · 88.0% acc · F1 0.911</div></div>
+        <span class="pill p-n">L5</span>
+      </label>
+      <label class="mrow" data-id="resnet_l6">
+        <input type="radio" name="model" value="resnet_l6">
+        <div class="rring"></div>
+        <div class="mbody"><div class="mname">Full fine-tune</div><div class="mmeta">23.5M trainable · 90.9% acc · F1 0.930</div></div>
+        <span class="pill p-best">Best</span>
+      </label>
     </div>
-    <div id="resultSection">
-      <div class="diag-card waiting" id="diagCard">
-        <div class="diag-icon waiting" id="diagIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
-        <div>
-          <div class="diag-title waiting" id="diagTitle">Awaiting image</div>
-          <div class="diag-sub" id="diagSub">Upload a chest X-ray to begin analysis</div>
+
+    <!-- Upload -->
+    <div class="upload-col">
+      <div class="card">
+        <div class="clabel">X-Ray image</div>
+        <div class="drop" id="dropZone">
+          <p>Drop image here or click to browse</p>
+          <small>JPEG · PNG · any size</small>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+        <div style="height:14px;"></div>
+        <div class="prev" id="prev">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+          <img id="pImg" alt="">
+        </div>
+        <div style="height:14px;"></div>
+        <button class="btn-run" id="btnRun" disabled onclick="analyze()">Run Inference</button>
+        <div style="height:8px;"></div>
+        <button class="btn-ghost" onclick="loadSample()">Load sample X-ray</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bento -->
+  <div class="bento">
+
+    <div class="card b-diag">
+      <div class="diag-inner">
+        <div class="diag-ico" id="dIco">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div class="diag-h" id="dH">Awaiting image</div>
+          <div class="diag-sub" id="dSub">Select a model and upload a chest X-ray to begin</div>
+          <div class="diag-mod" id="dMod">—</div>
+        </div>
+        <div class="load-row" id="loadRow">
+          <div class="spin"></div>
+          <span class="spin-lbl" id="spinLbl">Running...</span>
         </div>
       </div>
-
-      <div class="u-card">
-        <div class="u-header"><span class="u-label">Model uncertainty</span><span class="u-badge" id="uBadge">—</span></div>
-        <div class="u-track"><div class="u-fill" id="uFill"></div></div>
-        <div class="triage-row"><div class="triage-dot" id="triageDot" style="background:var(--text3)"></div><span id="triageText">Run inference to see clinical triage recommendation</span></div>
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <div class="conf-row"><span class="conf-name">Normal</span><div class="conf-track"><div class="conf-fill cf-normal" id="barNormal"></div></div><span class="conf-pct teal" id="pctNormal">—</span></div>
-        <div class="conf-row"><span class="conf-name">Pneumonia</span><div class="conf-track"><div class="conf-fill cf-pneum" id="barPneumonia"></div></div><span class="conf-pct red" id="pctPneumonia">—</span></div>
-      </div>
-
-      <div class="metrics-grid">
-        <div class="metric-card"><div class="metric-val teal" id="mLatency">—</div><div class="metric-lbl">Latency (ms)</div></div>
-        <div class="metric-card"><div class="metric-val purple" id="mConf">—</div><div class="metric-lbl">Confidence</div></div>
-        <div class="metric-card"><div class="metric-val amber" id="mUnc">—</div><div class="metric-lbl">Uncertainty</div></div>
-      </div>
-
-      <div class="panel-label">Speed comparison</div>
-      <div>
-        <div class="speed-row"><span class="speed-label">ResNet-50 PyTorch</span><div class="speed-track"><div class="speed-fill sf-resnet"></div></div><span class="speed-ms sm-resnet">18.1ms</span></div>
-        <div class="speed-row"><span class="speed-label">VeritasXR PyTorch</span><div class="speed-track"><div class="speed-fill sf-vxpt"></div></div><span class="speed-ms sm-vxpt">8.26ms</span></div>
-        <div class="speed-row"><span class="speed-label">VeritasXR TRT<span class="speed-tag">7.2x</span></span><div class="speed-track"><div class="speed-fill sf-vxtrt"></div></div><span class="speed-ms sm-vxtrt">2.53ms</span></div>
-      </div>
     </div>
+
+    <div class="card b-m"><div class="mn" id="mLat" style="color:var(--rust)">—</div><div class="ml">Latency ms</div></div>
+    <div class="card b-m"><div class="mn" id="mConf" style="color:var(--gold)">—</div><div class="ml">Confidence</div></div>
+    <div class="card b-m"><div class="mn" id="mAcc" style="color:var(--sage)">—</div><div class="ml">Test accuracy</div></div>
+    <div class="card b-m"><div class="mn" id="mF1" style="color:var(--ink)">—</div><div class="ml">F1 score</div></div>
+
+    <div class="card b-prob">
+      <div class="clabel">Class probabilities</div>
+      <div class="prow"><span class="plbl">Normal</span><div class="ptrack"><div class="pfill pf-n" id="bN"></div></div><span class="ppct" id="pN" style="color:var(--sage)">—</span></div>
+      <div class="prow"><span class="plbl">Pneumonia</span><div class="ptrack"><div class="pfill pf-p" id="bP"></div></div><span class="ppct" id="pP" style="color:var(--red)">—</span></div>
+    </div>
+
+    <div class="card b-unc">
+      <div class="unc-top"><span class="unc-lbl">Uncertainty</span><span class="badge b-na" id="uBadge">—</span></div>
+      <div class="utrack"><div class="ufill" id="uFill"></div></div>
+      <div class="triage"><div class="trdot" id="trDot"></div><span id="trTxt">Run inference to see triage recommendation</span></div>
+    </div>
+
+    <div class="card b-spd">
+      <div class="clabel">Speed reference</div>
+      <div class="spd-row"><span class="spd-l">ResNet50 baseline</span><span class="spd-v" style="color:var(--red)">18.1ms</span></div>
+      <div class="spd-row"><span class="spd-l">VeritasXR PyTorch</span><span class="spd-v">8.26ms</span></div>
+      <div class="spd-row"><span class="spd-l">VeritasXR TRT</span><span class="spd-v" style="color:var(--sage)">2.53ms</span></div>
+    </div>
+
+    <div class="card b-tbl">
+      <div class="clabel">All models — comparison</div>
+      <table class="cmp">
+        <thead><tr><th>Model</th><th>Accuracy</th><th>F1</th><th>Uncertainty</th></tr></thead>
+        <tbody id="tBody"></tbody>
+      </table>
+    </div>
+
   </div>
 </div>
 
-<div class="footer">Built with <span>TensorRT 10.x · Triton 2.54 · VeritasXR (custom) · PyTorch 2.x</span> &nbsp;·&nbsp; RTX 3070 Ti &nbsp;·&nbsp; SEAI Project 2026</div>
 <div class="toast" id="toast"></div>
 
 <script>
-const API = 'http://localhost:8080';
-let selectedFile = null;
-
-function toggleTheme() {
-  const h = document.documentElement;
-  h.setAttribute('data-theme', h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+const API='http://localhost:8080';
+let file=null,model='veritasxr';
+const MODELS=[
+  {id:'veritasxr',name:'VeritasXR',         acc:75.6, f1:null, unc:true},
+  {id:'resnet_l1',name:'ResNet50 — FC only', acc:84.29,f1:0.882,unc:false},
+  {id:'resnet_l2',name:'ResNet50 — Layer4+FC',acc:72.92,f1:0.822,unc:false},
+  {id:'resnet_l3',name:'ResNet50 — L3-4+FC', acc:81.25,f1:0.869,unc:false},
+  {id:'resnet_l4',name:'ResNet50 — L2-4+FC', acc:86.38,f1:0.900,unc:false},
+  {id:'resnet_l5',name:'ResNet50 — L1-4+FC', acc:87.98,f1:0.911,unc:false},
+  {id:'resnet_l6',name:'ResNet50 — Full FT',  acc:90.87,f1:0.930,unc:false},
+];
+function buildTable(a){
+  const tb=document.getElementById('tBody');tb.innerHTML='';
+  MODELS.forEach(m=>{
+    const tr=document.createElement('tr');
+    if(m.id===a)tr.className='hl';
+    const tag=m.id==='resnet_l6'?'<span class="ti ti-g">best</span>':m.id==='veritasxr'?'<span class="ti ti-r">custom</span>':'';
+    tr.innerHTML=`<td>${m.name}${tag}</td><td><div class="acell"><div class="atrack"><div class="abar" style="width:${m.acc}%"></div></div><span class="mono">${m.acc}%</span></div></td><td class="mono">${m.f1?m.f1.toFixed(3):'—'}</td><td class="mono">${m.unc?'✓':'—'}</td>`;
+    tb.appendChild(tr);
+  });
 }
-
-const uploadZone = document.getElementById('uploadZone');
-const fileInput  = document.getElementById('fileInput');
-uploadZone.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', e => { if(e.target.files[0]) setFile(e.target.files[0]); });
-uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
-uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('dragover'); if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
-
-function setFile(file) {
-  selectedFile = file;
-  const img = document.getElementById('previewImg');
-  img.src = URL.createObjectURL(file);
-  img.style.display = 'block';
-  document.getElementById('previewPh').style.display = 'none';
-  document.getElementById('btnAnalyze').disabled = false;
-  resetResult();
+buildTable('veritasxr');
+document.querySelectorAll('.mrow').forEach(el=>{
+  el.addEventListener('click',()=>{
+    document.querySelectorAll('.mrow').forEach(e=>e.classList.remove('sel'));
+    el.classList.add('sel');model=el.dataset.id;
+    el.querySelector('input').checked=true;buildTable(model);reset();
+  });
+});
+const dz=document.getElementById('dropZone'),fi=document.getElementById('fileInput');
+dz.addEventListener('click',()=>fi.click());
+fi.addEventListener('change',e=>{if(e.target.files[0])setFile(e.target.files[0]);});
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])setFile(e.dataTransfer.files[0]);});
+function setFile(f){
+  file=f;const img=document.getElementById('pImg');
+  img.src=URL.createObjectURL(f);img.style.display='block';
+  document.querySelector('#prev svg').style.display='none';
+  document.getElementById('btnRun').disabled=false;reset();
 }
-
-function loadSample() {
-  showToast('Loading sample X-ray...');
+function loadSample(){
+  toast('Loading sample...');
   fetch('https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Normal_posteroanterior_%28PA%29_chest_radiograph_%28X-ray%29.jpg/800px-Normal_posteroanterior_%28PA%29_chest_radiograph_%28X-ray%29.jpg')
-    .then(r => r.blob()).then(blob => { setFile(new File([blob], 'sample.jpg', {type:'image/jpeg'})); showToast('Sample loaded — click Analyze'); })
-    .catch(() => showToast('Could not load sample.'));
+    .then(r=>r.blob()).then(b=>{setFile(new File([b],'sample.jpg',{type:'image/jpeg'}));toast('Sample loaded');})
+    .catch(()=>toast('Could not load sample'));
 }
-
-function resetResult() {
-  document.getElementById('diagCard').className = 'diag-card waiting';
-  document.getElementById('diagIcon').className = 'diag-icon waiting';
-  document.getElementById('diagTitle').className = 'diag-title waiting';
-  document.getElementById('diagTitle').textContent = 'Ready to analyze';
-  document.getElementById('diagSub').textContent = 'Click Analyze X-Ray to run inference';
-  ['barNormal','barPneumonia','uFill'].forEach(id => document.getElementById(id).style.width = '0');
-  ['pctNormal','pctPneumonia','mLatency','mConf','mUnc'].forEach(id => document.getElementById(id).textContent = '—');
-  document.getElementById('uBadge').textContent = '—';
-  document.getElementById('uBadge').className = 'u-badge';
-  document.getElementById('uFill').className = 'u-fill';
-  document.getElementById('triageText').textContent = 'Run inference to see clinical triage recommendation';
-  document.getElementById('triageDot').style.background = 'var(--text3)';
+function reset(){
+  const ico=document.getElementById('dIco');ico.className='diag-ico';
+  ico.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>';
+  document.getElementById('dH').className='diag-h';document.getElementById('dH').textContent='Ready';
+  document.getElementById('dSub').textContent='Click Run Inference to start';
+  document.getElementById('dMod').textContent='—';
+  ['bN','bP','uFill'].forEach(id=>document.getElementById(id).style.width='0');
+  ['pN','pP','mLat','mConf','mAcc','mF1'].forEach(id=>document.getElementById(id).textContent='—');
+  document.getElementById('uBadge').textContent='—';document.getElementById('uBadge').className='badge b-na';
+  document.getElementById('uFill').className='ufill';
+  document.getElementById('trTxt').textContent='Run inference to see triage recommendation';
+  document.getElementById('trDot').style.background='var(--faint)';
 }
-
-async function analyze() {
-  if (!selectedFile) return;
-  document.getElementById('btnAnalyze').disabled = true;
-  document.getElementById('loadingOverlay').classList.add('visible');
-  document.getElementById('resultSection').style.opacity = '0.3';
-  const form = new FormData();
-  form.append('file', selectedFile);
-  try {
-    const res = await fetch(`${API}/predict`, {method:'POST', body:form});
-    if (!res.ok) throw new Error(`Server error: ${res.status}`);
-    showResult(await res.json());
-  } catch(err) {
-    showToast('Error: ' + err.message + ' — is Triton + FastAPI running?');
-  } finally {
-    document.getElementById('btnAnalyze').disabled = false;
-    document.getElementById('loadingOverlay').classList.remove('visible');
-    document.getElementById('resultSection').style.opacity = '1';
+async function analyze(){
+  if(!file)return;
+  document.getElementById('btnRun').disabled=true;
+  document.getElementById('loadRow').classList.add('show');
+  const nm=document.querySelector('.mrow.sel .mname')?.textContent||model;
+  document.getElementById('spinLbl').textContent=`Running ${nm}...`;
+  const form=new FormData();form.append('file',file);form.append('model_id',model);
+  try{
+    const res=await fetch(`${API}/predict`,{method:'POST',body:form});
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    render(await res.json());
+  }catch(e){toast('Error: '+e.message);}
+  finally{document.getElementById('btnRun').disabled=false;document.getElementById('loadRow').classList.remove('show');}
+}
+function render(d){
+  const pneu=d.prediction==='PNEUMONIA';
+  const nP=parseFloat(d.NORMAL),pP=parseFloat(d.PNEUMONIA);
+  const ico=document.getElementById('dIco'),dh=document.getElementById('dH');
+  if(pneu){
+    ico.className='diag-ico pneumonia';ico.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+    dh.className='diag-h pneumonia';dh.textContent='Pneumonia detected';
+    document.getElementById('dSub').textContent='Recommend clinical review and further testing';
+  }else{
+    ico.className='diag-ico normal';ico.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>';
+    dh.className='diag-h normal';dh.textContent='Normal — no findings';
+    document.getElementById('dSub').textContent='No signs of pneumonia detected in this image';
   }
-}
-
-function showResult(data) {
-  const isPneu = data.prediction === 'PNEUMONIA';
-  const nPct   = parseFloat(data.NORMAL);
-  const pPct   = parseFloat(data.PNEUMONIA);
-  const lat    = parseFloat(data.latency_ms).toFixed(2);
-  const conf   = parseFloat(data.confidence);
-  const unc    = data.uncertainty_score || 0;
-
-  const card  = document.getElementById('diagCard');
-  const icon  = document.getElementById('diagIcon');
-  const title = document.getElementById('diagTitle');
-  const sub   = document.getElementById('diagSub');
-
-  if (isPneu) {
-    card.className  = 'diag-card pneumonia';
-    icon.className  = 'diag-icon pneumonia';
-    icon.innerHTML  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
-    title.className = 'diag-title pneumonia';
-    title.textContent = 'Pneumonia Detected';
-    sub.textContent   = 'Recommend clinical review and further testing';
-  } else {
-    card.className  = 'diag-card normal';
-    icon.className  = 'diag-icon normal';
-    icon.innerHTML  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>';
-    title.className = 'diag-title normal';
-    title.textContent = 'Normal — No Findings';
-    sub.textContent   = 'No signs of pneumonia detected in this X-ray';
+  document.getElementById('dMod').textContent='▸ '+d.model_label;
+  document.getElementById('mLat').textContent=parseFloat(d.latency_ms).toFixed(1);
+  document.getElementById('mConf').textContent=parseFloat(d.confidence).toFixed(1)+'%';
+  document.getElementById('mAcc').textContent=d.accuracy?d.accuracy+'%':'—';
+  document.getElementById('mF1').textContent=d.f1?d.f1.toFixed(3):'—';
+  setTimeout(()=>{document.getElementById('bN').style.width=nP+'%';document.getElementById('bP').style.width=pP+'%';},60);
+  document.getElementById('pN').textContent=nP.toFixed(1)+'%';document.getElementById('pP').textContent=pP.toFixed(1)+'%';
+  if(d.has_uncertainty&&d.uncertainty_score!==null){
+    const u=d.uncertainty_score,up=Math.round(u*100);
+    let bc='b-hc',fc='uf-hc',dot='var(--sage)';
+    if(u>=0.7){bc='b-lc';fc='uf-lc';dot='var(--red)';}
+    else if(u>=0.4){bc='b-mc';fc='uf-mc';dot='var(--gold)';}
+    document.getElementById('uBadge').textContent=d.uncertainty_label;
+    document.getElementById('uBadge').className='badge '+bc;
+    const fill=document.getElementById('uFill');fill.className='ufill '+fc;
+    document.getElementById('trDot').style.background=dot;
+    document.getElementById('trTxt').textContent=d.triage;
+    setTimeout(()=>{fill.style.width=up+'%';},60);
+  }else{
+    document.getElementById('uBadge').textContent='N/A';document.getElementById('uBadge').className='badge b-na';
+    document.getElementById('trTxt').textContent='Only available for VeritasXR';
   }
-
-  const uPct  = Math.round(unc * 100);
-  const badge = document.getElementById('uBadge');
-  const fill  = document.getElementById('uFill');
-  let cls = 'hc', dot = 'var(--success)';
-  if (unc >= 0.7)      { cls = 'lc'; dot = 'var(--danger)'; }
-  else if (unc >= 0.4) { cls = 'mc'; dot = 'var(--warn)'; }
-  badge.textContent = data.uncertainty_label || 'Unknown';
-  badge.className   = 'u-badge ' + cls;
-  fill.className    = 'u-fill ' + cls;
-  document.getElementById('triageDot').style.background = dot;
-  document.getElementById('triageText').textContent = data.triage || '—';
-
-  setTimeout(() => {
-    document.getElementById('barNormal').style.width    = nPct.toFixed(1) + '%';
-    document.getElementById('barPneumonia').style.width = pPct.toFixed(1) + '%';
-    fill.style.width = uPct + '%';
-  }, 50);
-
-  document.getElementById('pctNormal').textContent   = nPct.toFixed(1) + '%';
-  document.getElementById('pctPneumonia').textContent = pPct.toFixed(1) + '%';
-  document.getElementById('mLatency').textContent    = lat;
-  document.getElementById('mConf').textContent       = conf.toFixed(1) + '%';
-  document.getElementById('mUnc').textContent        = uPct + '%';
+  buildTable(d.model_id);
 }
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('visible');
-  setTimeout(() => t.classList.remove('visible'), 3000);
-}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 </script>
 </body>
 </html>
