@@ -64,7 +64,7 @@ input 1x224x224
 | Decision | Reason |
 |---|---|
 | 11x11 stem | Radiographic signal is diffuse texture rather than sharp edges, so the first layer looks wide |
-| Two kernel scales | The 3x3 branch resolves ~119 px of the 224 px field, the 7x7 branch ~215 px — local detail against whole-lung structure |
+| Two kernel scales | Each unit in the 3x3 branch sees 75 px of the 224 px field, against 187 px in the 7x7 branch — local detail against whole-lung structure |
 | Squeeze-excitation | Channel attention using global context, 8,464 parameters per branch |
 | Per-input merge gate | Blend weights are predicted from the image, not learned as a dataset-wide constant |
 | Derived uncertainty | Jensen-Shannon divergence between two independently supervised pathway heads. No part of the uncertainty path is a free parameter, so it cannot silently go untrained |
