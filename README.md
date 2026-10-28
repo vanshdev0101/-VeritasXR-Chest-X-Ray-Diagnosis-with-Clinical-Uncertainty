@@ -54,22 +54,45 @@ hospital**, with an official validation split of 16 images. Results obtained on 
 be claimed to generalise to adults, and a 16-image validation set makes checkpoint
 selection noise-dominated.
 
-It is replaced by the **RSNA Pneumonia Detection Challenge** dataset:
+It is replaced by the **RSNA Pneumonia Detection Challenge** dataset. Figures below are
+measured from the download and counted per image, not per annotation row:
 
 | | Kaggle `chest_xray` | RSNA Pneumonia |
 |---|---|---|
-| Images | 5,856 | ~30,000 |
+| Labelled images | 5,856 | 26,684 |
 | Population | pediatric, 1–5 years | adults |
 | Sites | 1 hospital | multi-site (from NIH CXR14) |
 | Labels | binary, physician | 1–3 board-certified radiologists |
-| Class balance | 26 / 74 | ~50 / 50 |
-| Bounding boxes | none | yes, 6 radiologists |
-| Validation split | 16 images | built patient-wise, ~15% |
+| Positive rate | 74% pneumonia | 22.5% lung opacity |
+| Label granularity | 2 classes | 3 classes + boxes |
+| Bounding boxes | none | 9,555 boxes over 6,012 images |
+| Validation split | 16 images | patient-wise, ~15% (~4,000) |
 
-The balanced classes remove the need for the asymmetric loss weighting that previously
-made the custom model and the baselines incomparable. The bounding boxes enable S6:
-scoring each model's Grad-CAM against radiologist-drawn ground truth, which replaces the
-removed uncertainty-triage claim with a measurable one.
+Per-image class distribution:
+
+| Class | Images | Share |
+|---|---|---|
+| No Lung Opacity / Not Normal | 11,821 | 44.3% |
+| Normal | 8,851 | 33.2% |
+| Lung Opacity (`Target=1`) | 6,012 | 22.5% |
+
+Note that RSNA is *more* imbalanced than the dataset it replaces, in the opposite
+direction. At 22.5% prevalence **accuracy is not a usable metric** — a model that always
+predicts negative scores 77.5%. S5 therefore reports AUROC, AUPRC, F1 and balanced
+accuracy, and the imbalance is handled identically for every model by the shared harness.
+
+To be explicit about what the dataset change does and does not fix: it does **not** make
+the models comparable. That was never a data problem — it came from training each model
+under a different loss, schedule and selection metric, and S2's single harness is what
+fixes it. What the dataset buys is 4.6x the images, an adult multi-site population,
+radiologist labels rather than one physician's, a validation set large enough for
+checkpoint selection to mean anything, and the bounding boxes that make S6 possible.
+
+Splits are stratified on the 3-class label rather than the binary target, so the hard
+middle class — abnormal but not pneumonia — stays proportional across train, val and
+test. The primary task remains binary pneumonia detection for continuity with the
+previous version; every manifest carries the `class` column, so the 3-class variant is a
+one-line change.
 
 ## Models compared
 
