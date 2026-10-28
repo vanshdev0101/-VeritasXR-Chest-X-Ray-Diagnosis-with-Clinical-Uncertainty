@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import transforms, datasets
-from veritasxr_model import get_model
+from src.models.veritasxr import get_model
 from tqdm import tqdm
 import time
 
