@@ -8,7 +8,7 @@ recipe itself comes from the shared config.
 """
 from torchvision import models, transforms
 
-from src.models.veritasxr import get_model as get_veritasxr
+from src.models.veritasxr import build_ablation, get_model as get_veritasxr
 
 NORMALIZE = {
     "imagenet": ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
@@ -30,10 +30,17 @@ def _replace_head(name, model, num_classes):
     return model
 
 
-def build_model(name, spec, num_classes=2):
-    """Return an nn.Module for `name`. `spec` is config's per_model[name]."""
+def build_model(name, spec, num_classes=2, ablation=None):
+    """Return an nn.Module for `name`. `spec` is config's per_model[name].
+
+    `ablation` selects a VeritasXR variant (see veritasxr.ABLATIONS); the
+    variants are how the custom model's own design decisions get tested.
+    """
     if name == "veritasxr":
-        return get_veritasxr()
+        return (build_ablation(ablation, num_classes=num_classes) if ablation
+                else get_veritasxr(num_classes=num_classes))
+    if ablation:
+        raise ValueError(f"--ablation applies to veritasxr, not {name!r}")
     builders = {
         "resnet50": (models.resnet50, models.ResNet50_Weights.IMAGENET1K_V1),
         "densenet121": (models.densenet121, models.DenseNet121_Weights.IMAGENET1K_V1),

@@ -17,13 +17,39 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from src.models.veritasxr import ABLATIONS  # noqa: E402
 from src.training.harness import train_deep, write_results  # noqa: E402
 
 MODELS = ["veritasxr", "resnet50", "densenet121", "efficientnet_b0", "hog_svm"]
 
 
-def run_one(name, cfg, seed, device, args):
-    print(f"\n=== {name} | seed {seed} ===")
+class Tee:
+    """Mirror stdout to a file so a long background run stays watchable.
+
+    isatty() reports the real terminal's state, so the progress reporter still
+    picks a live bar when one is attached and plain lines when it is not.
+    """
+
+    def __init__(self, path):
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        self.fh = open(path, "a", buffering=1)
+
+    def write(self, s):
+        sys.__stdout__.write(s)
+        self.fh.write(s)
+        return len(s)
+
+    def flush(self):
+        sys.__stdout__.flush()
+        self.fh.flush()
+
+    def isatty(self):
+        return sys.__stdout__.isatty()
+
+
+def run_one(name, cfg, seed, device, args, ablation=None):
+    label = f"{name}_{ablation}" if ablation else name
+    print(f"\n=== {label} | seed {seed} ===", flush=True)
     if name == "hog_svm":
         from src.training.hog_svm import run as run_svm
         payload, yt, st, ids = run_svm(
@@ -33,8 +59,8 @@ def run_one(name, cfg, seed, device, args):
         payload, yt, st, ids = train_deep(
             name, cfg, seed, device,
             max_epochs=args.max_epochs, limit_batches=args.limit_batches,
-            batch_size=args.batch_size, workers=args.workers)
-    out = Path(cfg["output_dir"]) / f"{name}_seed{seed}"
+            batch_size=args.batch_size, workers=args.workers, ablation=ablation)
+    out = Path(cfg["output_dir"]) / f"{label}_seed{seed}"
     write_results(out, payload, yt, st, ids)
     t = payload["test"]
     print(f"  -> AUPRC {t['auprc']:.4f} | AUROC {t['auroc']:.4f} | "
@@ -57,7 +83,15 @@ def main():
                     help="cap samples for the classical path (smoke testing)")
     ap.add_argument("--smoke", action="store_true",
                     help="1 epoch over a handful of batches for every model")
+    ap.add_argument("--ablation", choices=list(ABLATIONS) + ["all"],
+                    help="VeritasXR variant(s); 'all' sweeps every variant")
+    ap.add_argument("--log-file", type=Path,
+                    help="mirror all output here so a background run is tailable")
     args = ap.parse_args()
+
+    if args.log_file:
+        sys.stdout = Tee(args.log_file)
+        print(f"--- logging to {args.log_file} ---", flush=True)
 
     cfg = yaml.safe_load(args.config.read_text())
     if args.smoke:
@@ -78,16 +112,30 @@ def main():
     if args.smoke:
         seeds = [seeds[0]]
 
-    failures = []
+    if args.ablation:
+        variants = list(ABLATIONS) if args.ablation == "all" else [args.ablation]
+        names = ["veritasxr"]
+    else:
+        variants = [None]
+
+    total_runs = len(names) * len(seeds) * len(variants)
+    print(f"queued {total_runs} run(s): models={names} seeds={seeds} "
+          f"variants={variants}", flush=True)
+
+    failures, done = [], 0
     for name in names:
-        for seed in seeds:
-            try:
-                run_one(name, cfg, seed, device, args)
-            except Exception as exc:
-                failures.append((name, seed, repr(exc)))
-                print(f"  !! FAILED {name} seed {seed}: {exc!r}", file=sys.stderr)
-                if not args.smoke:
-                    raise
+        for variant in (variants if name == "veritasxr" else [None]):
+            for seed in seeds:
+                done += 1
+                print(f"\n[{done}/{total_runs}]", end="", flush=True)
+                try:
+                    run_one(name, cfg, seed, device, args, ablation=variant)
+                except Exception as exc:
+                    failures.append((name, seed, repr(exc)))
+                    print(f"  !! FAILED {name} seed {seed}: {exc!r}",
+                          file=sys.stderr, flush=True)
+                    if not args.smoke:
+                        raise
 
     if failures:
         print(f"\n{len(failures)} run(s) failed:")

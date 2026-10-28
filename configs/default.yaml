@@ -37,6 +37,12 @@ train:
   # imbalance is handled the same way for every model rather than per script.
   class_weighting: balanced
 
+  # Weight on each per-path head's loss for VeritasXR. The heads are what make
+  # the disagreement uncertainty signal meaningful: each path has to be
+  # independently predictive, so they are pushed to differentiate rather than
+  # co-adapt into duplicates. Ignored by models without per-path heads.
+  aux_loss_weight: 0.3
+
 augment:
   # Deliberately no horizontal flip. Mirroring a chest radiograph places the
   # heart on the right, which is situs inversus -- a rare pathology, not a valid
