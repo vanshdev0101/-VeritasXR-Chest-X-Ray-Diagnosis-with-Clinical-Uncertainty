@@ -11,9 +11,11 @@ Regenerate the data after new runs:
 
     python scripts/export_web_data.py
 
-Preview locally:
+Preview locally. Use an absolute path: `--directory docs` resolves against the
+current shell, and http.server does not complain about a missing directory --
+it just returns 404 for everything, which looks like missing files.
 
-    python -m http.server 8077 --directory docs
+    python -m http.server 8077 --directory ~/git/veritasxr/docs
 
 ## Design
 

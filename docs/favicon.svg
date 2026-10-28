@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="VeritasXR">
+  <rect width="32" height="32" rx="7" fill="#1E40AF"/>
+  <!-- Two arcs: the local and global pathways reading one field. -->
+  <path d="M9 7v9a7 7 0 0 0 14 0V7" fill="none" stroke="#BFD3FF" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+  <path d="M16 6v13" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M11 19l5 7 5-7" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>
