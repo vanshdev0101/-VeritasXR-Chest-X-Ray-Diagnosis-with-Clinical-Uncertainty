@@ -26,6 +26,13 @@ __pycache__/
 .env
 .venv/
 
+# Agent tooling. `npx skills add` installs project-locally by default, which
+# drops ~11 MB of skill bundles into the repo. They live in ~/.agents/skills
+# instead, symlinked into ~/.claude/skills so they are available everywhere.
+.agents/
+.claude/
+skills-lock.json
+
 # System
 .DS_Store
 Thumbs.db
