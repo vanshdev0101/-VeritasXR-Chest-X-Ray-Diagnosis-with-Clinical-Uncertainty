@@ -1,27 +1,22 @@
-# Dataset
-data/
+# Dataset — root level only. src/data/ is source code, not data.
+/data/
 
-# Results (charts and analysis images)
-results/
+# Generated output
+/results/
+/models/
 
-# Models — weights, engines, exports
-models/
-triton_models/
-
-# Large file extensions anywhere in repo
+# Checkpoints and cached arrays, anywhere
 *.pth
-*.onnx
-*.trt
-*.plan
 *.pt
-*.bin
-*.h5
+*.npz
+*.dcm
 
 # Python
 __pycache__/
 *.pyc
 *.pyo
 .env
+.venv/
 
 # System
 .DS_Store
