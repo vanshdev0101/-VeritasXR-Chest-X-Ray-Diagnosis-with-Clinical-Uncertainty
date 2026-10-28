@@ -94,6 +94,38 @@ test. The primary task remains binary pneumonia detection for continuity with th
 previous version; every manifest carries the `class` column, so the 3-class variant is a
 one-line change.
 
+## Performance notes
+
+Measured on an RTX 3070 Ti Laptop (8 GB), batch 32, 8 dataloader workers.
+
+Training-step throughput, and what the bottleneck is *not*:
+
+| Model | it/s | min/epoch |
+|---|---|---|
+| VeritasXR | 7.94 | 1.22 |
+| ResNet50 | 5.04 | 1.93 |
+| EfficientNet-B0 | 3.66 | 2.66 |
+| DenseNet121 | 2.11 | 4.61 |
+
+DenseNet121 is the slowest of the four despite having 6.96M parameters against
+ResNet50's 23.51M: its concatenation-heavy design is memory-bandwidth bound, so
+throughput here is set by per-model GPU behaviour rather than by parameter count.
+
+**Rejected: GPU-side batched augmentation.** The data loader in isolation reaches
+27.9 it/s decoding only, against 13.3 with single-channel CPU augmentation and
+9.3 with three-channel, which suggested augmentation was the limiter. Moving it
+to the GPU as per-sample affine matrices (one resample instead of two) measured
+**1.02x end to end** across the four models, and 0.93x for VeritasXR. The
+loader-only figures were misleading because they were taken with all cores idle
+and no GPU work competing; in real training the augmentation was never on the
+critical path. Not adopted -- the implementation is in the history if it is ever
+worth revisiting at a larger batch size.
+
+One trap worth recording: `torchvision.transforms.v2` applied to a batched
+tensor draws a single set of random parameters for the whole batch, so every
+image in a batch receives the identical crop and rotation. That would look like
+a clean speedup while quietly collapsing augmentation diversity.
+
 ## Models compared
 
 | Model | Class | Params |
