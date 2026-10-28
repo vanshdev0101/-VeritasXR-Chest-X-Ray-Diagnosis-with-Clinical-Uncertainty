@@ -98,11 +98,14 @@ one-line change.
 
 | Model | Class | Params |
 |---|---|---|
-| HOG + linear SVM | classical ML, no deep learning | — |
-| ResNet50 | residual CNN, ImageNet pretrained | 25.6M |
-| DenseNet121 | dense CNN, ImageNet pretrained (CheXNet backbone) | 8.0M |
-| EfficientNet-B0 | efficient CNN, ImageNet pretrained | 5.3M |
-| VeritasXR | custom dual-pathway CNN, trained from scratch | 17.0M, slimming to ~6M in S3 |
+| HOG + linear SVM | classical ML, no deep learning | 6,085 features |
+| ResNet50 | residual CNN, ImageNet pretrained | 23.51M |
+| DenseNet121 | dense CNN, ImageNet pretrained (CheXNet backbone) | 6.96M |
+| EfficientNet-B0 | efficient CNN, ImageNet pretrained | 4.01M |
+| VeritasXR | custom dual-pathway CNN, trained from scratch | 17.02M, slimming to ~6M in S3 |
+
+Parameter counts are measured with a two-class head, not the ImageNet
+1000-class figures that are usually quoted.
 
 The HOG + SVM entry is the control for whether deep learning is needed at all.
 EfficientNet-B0 is the size-matched rival once VeritasXR is slimmed.
@@ -124,8 +127,30 @@ src/
 ## Setup
 
 ```bash
-pip install -r requirements.txt
+python -m venv .venv && ./.venv/bin/pip install -r requirements.txt
 ```
+
+## Running it
+
+```bash
+# 1. build the dataset: DICOM -> PNG cache + patient-wise manifests
+python scripts/prepare_rsna.py --raw data/raw --out data/processed
+
+# 2. the gate: splits must be leakage-free before anything trains
+python tests/test_no_leakage.py
+
+# 3. smoke test -- one epoch over a few batches for all five models
+python train.py --smoke
+
+# 4. a single run, or every model across every seed
+python train.py --model veritasxr --seed 0
+python train.py --model all
+```
+
+Results land in `results/<model>_seed<seed>/` as `metrics.json` plus
+`test_scores.npz`. The per-sample test scores are saved so that bootstrap
+confidence intervals and significance tests can be run later without
+retraining anything.
 
 Developed against an NVIDIA RTX 3070 (8 GB). Training configs in S2 are sized for that;
 adjust batch size for other cards.

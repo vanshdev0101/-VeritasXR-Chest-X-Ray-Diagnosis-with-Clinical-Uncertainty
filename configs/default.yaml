@@ -1,0 +1,68 @@
+# One training recipe, applied identically to every model.
+#
+# The previous version of this project trained its custom model with a weighted
+# loss for 20 epochs on a cosine schedule at lr 1e-4, selecting on val F1, and
+# its ResNet baselines with an unweighted loss for 5 epochs on StepLR at 3e-4,
+# selecting on val accuracy. The reported accuracy gap was therefore not
+# attributable to architecture. Everything below is shared so that it is.
+#
+# Anything that legitimately must differ per model is listed under `per_model`
+# with the reason written down.
+
+data:
+  root: data/processed
+  train: train.csv
+  val: val.csv
+  test: test.csv
+  image_size: 224          # cache is 256px, leaving room to crop
+
+train:
+  max_epochs: 30
+  batch_size: 32           # fits 8 GB for every model here, bf16, incl. ResNet50
+  optimizer: adamw
+  lr: 3.0e-4
+  weight_decay: 1.0e-4
+  scheduler: cosine
+  warmup_epochs: 1
+  amp_dtype: bfloat16      # Ampere supports it, so no GradScaler is needed
+  num_workers: 8
+  early_stop_patience: 5
+
+  # Accuracy is unusable at 22.5% prevalence: always predicting negative scores
+  # 77.5%. AUPRC is the most sensitive of the ranking metrics to the minority
+  # class, so checkpoints are selected on it.
+  select_metric: val_auprc
+
+  # Inverse-frequency class weights computed from the train split, so the
+  # imbalance is handled the same way for every model rather than per script.
+  class_weighting: balanced
+
+augment:
+  # Deliberately no horizontal flip. Mirroring a chest radiograph places the
+  # heart on the right, which is situs inversus -- a rare pathology, not a valid
+  # augmentation of a normal view. The previous training scripts all flipped.
+  crop_scale: [0.85, 1.0]
+  crop_ratio: [0.95, 1.05] # kept near 1: wide aspect jitter distorts anatomy
+  rotation_degrees: 10
+  brightness: 0.1
+  contrast: 0.1
+
+# Per-model deviations, each with its justification. Normalisation and channel
+# count are not confounds -- an ImageNet-pretrained backbone needs its own
+# statistics and three channels for its weights to mean anything, while the
+# custom model is natively single-channel.
+per_model:
+  veritasxr:        {in_channels: 1, normalize: half,     pretrained: false}
+  resnet50:         {in_channels: 3, normalize: imagenet, pretrained: true}
+  densenet121:      {in_channels: 3, normalize: imagenet, pretrained: true}
+  efficientnet_b0:  {in_channels: 3, normalize: imagenet, pretrained: true}
+  hog_svm:          {in_channels: 1, normalize: none,     kind: classical}
+
+# Empty on purpose. A per-model learning-rate sweep is the rigorous upgrade over
+# one shared lr; it was not run here for compute reasons, and doing it later is
+# a config change rather than a code change. Any entry added is a documented
+# departure from "identical recipe".
+lr_overrides: {}
+
+seeds: [0, 1, 2]
+output_dir: results
