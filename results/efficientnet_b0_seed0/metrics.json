@@ -1,0 +1,152 @@
+{
+  "model": "efficientnet_b0",
+  "run": "efficientnet_b0",
+  "ablation": null,
+  "seed": 0,
+  "kind": "deep",
+  "params_total": 4010110,
+  "params_trainable": 4010110,
+  "aux_heads_supervised": false,
+  "aux_loss_weight": 0.3,
+  "lr": 0.0003,
+  "epochs_run": 9,
+  "best_epoch": 4,
+  "best_val_auprc": 0.7113075054203515,
+  "train_seconds": 1592.1,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.48010789701398815,
+      "lr": 0.0003,
+      "val_auprc": 0.6812690810092024,
+      "val_auroc": 0.8754749203394077,
+      "val_f1": 0.6352837659480862
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.44137924505752313,
+      "lr": 0.00029917828430524096,
+      "val_auprc": 0.704521781476239,
+      "val_auroc": 0.8884092943324621,
+      "val_f1": 0.6524361948955917
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.42672450446857596,
+      "lr": 0.0002967221401100708,
+      "val_auprc": 0.710006900968262,
+      "val_auroc": 0.8874966882675164,
+      "val_f1": 0.6217821782178218
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.4091156486734927,
+      "lr": 0.00029265847744427303,
+      "val_auprc": 0.7113075054203515,
+      "val_auroc": 0.8877818552862411,
+      "val_f1": 0.6174496644295302
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.3911991557473793,
+      "lr": 0.0002870318186463901,
+      "val_auprc": 0.7051989613676752,
+      "val_auroc": 0.8879644481042569,
+      "val_f1": 0.6343124733929332
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.3764372694451445,
+      "lr": 0.0002799038105676658,
+      "val_auprc": 0.6763153958452499,
+      "val_auroc": 0.8759673839103506,
+      "val_f1": 0.62751677852349
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.34861246198671353,
+      "lr": 0.0002713525491562421,
+      "val_auprc": 0.7014799391157338,
+      "val_auroc": 0.8826731946582651,
+      "val_f1": 0.6278877887788779
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.33227395212619626,
+      "lr": 0.00026147172382160914,
+      "val_auprc": 0.6707356372162,
+      "val_auroc": 0.8732145286599118,
+      "val_f1": 0.6210752688172043
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.31023618033216505,
+      "lr": 0.00025036959095382875,
+      "val_auprc": 0.6882820082378752,
+      "val_auroc": 0.8805375747377466,
+      "val_f1": 0.6402139991083371
+    }
+  ],
+  "test": {
+    "auroc": 0.8765683836133287,
+    "auprc": 0.7008536313204456,
+    "f1": 0.6064924782264449,
+    "balanced_accuracy": 0.7860495808543084,
+    "sensitivity": 0.8482834994462901,
+    "specificity": 0.7238156622623267,
+    "accuracy": 0.7518721917124314,
+    "threshold": 0.5,
+    "confusion": {
+      "tn": 2246,
+      "fp": 857,
+      "fn": 137,
+      "tp": 766
+    },
+    "n": 4006,
+    "positives": 903
+  },
+  "device": "NVIDIA GeForce RTX 3070 Ti Laptop GPU",
+  "torch": "2.14.1+cu130",
+  "config": {
+    "data": {
+      "root": "data/processed",
+      "train": "train.csv",
+      "val": "val.csv",
+      "test": "test.csv",
+      "image_size": 224
+    },
+    "train": {
+      "max_epochs": 30,
+      "batch_size": 32,
+      "optimizer": "adamw",
+      "lr": 0.0003,
+      "weight_decay": 0.0001,
+      "scheduler": "cosine",
+      "warmup_epochs": 1,
+      "amp_dtype": "bfloat16",
+      "num_workers": 8,
+      "early_stop_patience": 5,
+      "select_metric": "val_auprc",
+      "class_weighting": "balanced",
+      "aux_loss_weight": 0.3
+    },
+    "augment": {
+      "crop_scale": [
+        0.85,
+        1.0
+      ],
+      "crop_ratio": [
+        0.95,
+        1.05
+      ],
+      "rotation_degrees": 10,
+      "brightness": 0.1,
+      "contrast": 0.1
+    }
+  },
+  "per_model": {
+    "in_channels": 3,
+    "normalize": "imagenet",
+    "pretrained": true
+  }
+}

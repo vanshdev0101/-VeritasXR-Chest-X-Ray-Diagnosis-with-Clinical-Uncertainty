@@ -23,9 +23,10 @@ import pandas as pd
 from PIL import Image
 from skimage.feature import hog
 from sklearn.metrics import average_precision_score
+from scipy.special import expit
+from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.svm import LinearSVC
 
 from src.training.harness import metrics_from
 
@@ -81,21 +82,40 @@ def run(cfg, seed, workers=8, limit=None):
     feat_seconds = round(time.time() - t0, 1)
 
     Xtr, ytr, _ = data["train"]
+    # A linear SVM fitted by averaged SGD rather than by liblinear.
+    #
+    # LinearSVC was the obvious choice and does not scale here: on this
+    # 18,677 x 6,084 dense matrix liblinear's primal solver ran single-threaded
+    # for over 30 minutes with no convergence output, holding 6 GB resident and
+    # spilling 2 GB to swap. SGDClassifier(loss="hinge") optimises the same
+    # objective -- hinge loss with L2 penalty, i.e. a linear SVM -- in minutes,
+    # keeps float32 instead of upcasting to float64, and reports per-epoch
+    # progress. average=True (ASGD) is what makes hinge-loss SGD stable enough
+    # to be worth trusting.
+    #
+    # class_weight="balanced" mirrors the inverse-frequency weighting the deep
+    # models receive, so the imbalance is handled consistently.
     clf = make_pipeline(
-        StandardScaler(),
-        # balanced mirrors the inverse-frequency weighting the deep models get
-        LinearSVC(C=1.0, class_weight="balanced", random_state=seed,
-                  dual="auto", max_iter=5000),
+        StandardScaler(copy=False),
+        SGDClassifier(loss="hinge", penalty="l2", alpha=1e-4,
+                      class_weight="balanced", max_iter=100, tol=1e-4,
+                      early_stopping=True, n_iter_no_change=5,
+                      validation_fraction=0.1, average=True,
+                      random_state=seed, verbose=1),
     )
-    print("  fitting LinearSVC ...")
+    print("  fitting linear SVM (averaged SGD) ...", flush=True)
     clf.fit(Xtr, ytr)
+    sgd = clf.named_steps["sgdclassifier"]
+    print(f"  converged in {sgd.n_iter_} epochs", flush=True)
 
     # decision_function gives an unbounded margin. Ranking metrics (AUROC,
     # AUPRC) only need the ordering, but metrics_from thresholds at 0.5, so the
     # margin is squashed to [0,1] -- a monotone map that leaves ranking intact.
     def score(X):
-        d = clf.decision_function(X)
-        return 1.0 / (1.0 + np.exp(-d))
+        # expit rather than 1/(1+exp(-d)): the naive form overflows for large
+        # negative margins. Monotone either way, so ranking metrics are
+        # unaffected, but it should not emit warnings.
+        return expit(clf.decision_function(X))
 
     yv, sv = data["val"][1], score(data["val"][0])
     yt, st = data["test"][1], score(data["test"][0])
@@ -113,8 +133,13 @@ def run(cfg, seed, workers=8, limit=None):
         "device": "cpu",
         "config": {k: cfg[k] for k in ("data", "train")},
         "per_model": cfg["per_model"]["hog_svm"],
+        "solver": "SGDClassifier(loss=hinge, average=True)",
+        "solver_note": ("liblinear/LinearSVC did not scale to 6,084 dense "
+                        "features: >30 min single-threaded, 6 GB resident, "
+                        "2 GB swapped. Same objective, different optimiser."),
         "deviations": [
             "no epochs, learning rate or schedule: not defined for an SVM",
+            "fitted by averaged SGD, not liblinear, for tractability",
             "no augmentation: HOG descriptors are precomputed once per image",
             "scores are a sigmoid of the SVM margin, monotone so ranking is unaffected",
         ],

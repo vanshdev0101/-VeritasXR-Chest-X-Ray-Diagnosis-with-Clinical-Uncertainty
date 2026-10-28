@@ -153,7 +153,12 @@ def make_loaders(cfg, spec, batch_size=None, workers=None):
             # drop_last on train only: VeritasXR's classifier contains a
             # BatchNorm1d, which cannot compute variance over a batch of 1.
             drop_last=is_train,
-            persistent_workers=nw > 0,
+            # Deliberately off. persistent_workers=True left an orphaned
+            # multiprocessing forkserver behind after the main process exited,
+            # which keeps the process group's pipes open -- a backgrounded
+            # sweep then never reports completion. Respawning workers costs a
+            # second or two against a ~70s epoch, which is not worth that.
+            persistent_workers=False,
         )
     return out
 

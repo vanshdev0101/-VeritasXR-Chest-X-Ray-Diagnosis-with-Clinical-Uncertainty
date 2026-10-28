@@ -1,8 +1,12 @@
 # Dataset — root level only. src/data/ is source code, not data.
 /data/
 
-# Generated output
-/results/
+# Generated output. Checkpoints are large and regenerable, logs are noise, but
+# the metrics, per-sample test scores and training curves are the evidence
+# behind every number in the report -- those are tracked.
+/results/*.log
+/results/*.stdout
+/results/smoke*/
 /models/
 
 # Checkpoints and cached arrays, anywhere
@@ -10,6 +14,10 @@
 *.pt
 *.npz
 *.dcm
+
+# ...but per-sample test scores are the evidence S5 bootstraps and runs
+# significance tests on, so they are kept despite the *.npz rule above.
+!/results/*/test_scores.npz
 
 # Python
 __pycache__/

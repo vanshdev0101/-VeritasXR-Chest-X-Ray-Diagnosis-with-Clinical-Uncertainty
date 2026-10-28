@@ -87,6 +87,9 @@ def main():
                     help="VeritasXR variant(s); 'all' sweeps every variant")
     ap.add_argument("--log-file", type=Path,
                     help="mirror all output here so a background run is tailable")
+    ap.add_argument("--skip-existing", action="store_true",
+                    help="skip runs whose metrics.json already exists, so an "
+                         "interrupted sweep resumes instead of redoing work")
     args = ap.parse_args()
 
     if args.log_file:
@@ -127,6 +130,13 @@ def main():
         for variant in (variants if name == "veritasxr" else [None]):
             for seed in seeds:
                 done += 1
+                label = f"{name}_{variant}" if variant else name
+                existing = (Path(cfg["output_dir"]) / f"{label}_seed{seed}"
+                            / "metrics.json")
+                if args.skip_existing and existing.is_file():
+                    print(f"\n[{done}/{total_runs}] {label} seed {seed}: "
+                          f"already done, skipping", flush=True)
+                    continue
                 print(f"\n[{done}/{total_runs}]", end="", flush=True)
                 try:
                     run_one(name, cfg, seed, device, args, ablation=variant)
