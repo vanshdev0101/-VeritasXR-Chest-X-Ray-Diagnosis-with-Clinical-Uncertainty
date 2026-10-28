@@ -144,7 +144,7 @@
     <div class="grid grid-3">
       <div class="card"><h3>ONNX in the browser</h3><p class="hint">The trained model is exported to ONNX and executed by onnxruntime-web compiled to WebAssembly. No inference server, no API, no upload.</p></div>
       <div class="card"><h3>Gradient-free attribution</h3><p class="hint">onnxruntime-web cannot backpropagate, so Grad-CAM is unavailable. The per-pathway heads are linear on pooled features, which makes plain CAM exact here.</p></div>
-      <div class="card"><h3>Honest uncertainty</h3><p class="hint">An earlier version served an uncertainty head that received no gradient during training — 528,577 parameters at their initialisation. This one is derived from two supervised heads.</p></div>
+      <div class="card"><h3>Derived, not learned</h3><p class="hint">The uncertainty score has no parameters of its own. It is computed from two independently supervised pathway heads, so there is no part of it that can go untrained while still producing confident-looking numbers.</p></div>
     </div>
   </section>
 

@@ -53,8 +53,8 @@ async function loadModel() {
     badge.className = 'badge badge-pending';
     badge.textContent = 'model export pending — UI is live, inference is not';
     $('model-state').insertAdjacentHTML('beforeend',
-      ' <span class="hint">The ONNX export (stage F2) has not been committed yet. ' +
-      'Upload and preprocessing work; prediction will activate once the model file lands.</span>');
+      ' <span class="hint">The model file is not published yet. Upload and ' +
+      'preprocessing work; prediction activates once it lands.</span>');
     console.info('[VeritasXR] model unavailable:', err.message);
   }
 }

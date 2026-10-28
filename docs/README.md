@@ -5,7 +5,7 @@ Static, no build step, no backend. Served from this directory by GitHub Pages.
     index.html      live demo - the model runs in the browser via onnxruntime-web
     results.html    comparative study, charts generated from the run artifacts
     data/           summary.json, written by scripts/export_web_data.py
-    model/          veritasxr.onnx - not yet committed (stage F2)
+    model/          veritasxr.onnx - not published yet
 
 Regenerate the data after new runs:
 

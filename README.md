@@ -1,74 +1,83 @@
 # VeritasXR — A Comparative Study of CNN Architectures for Chest Radiograph Classification
 
-A custom dual-pathway CNN (VeritasXR) evaluated against classical machine learning and
-three pretrained CNN baselines on chest radiographs, under a single shared training
-protocol.
+A custom dual-pathway CNN evaluated against three ImageNet-pretrained CNNs and a
+classical computer-vision baseline on chest radiographs, under a single shared
+training protocol.
 
-> **Status: refactor in progress on `pure-ml-refactor`.**
-> The project is being converted from an inference-serving demo into a pure ML/DL study.
-> No results from the previous version are carried forward — see *Why the rewrite*.
+The architecture runs two convolutional branches in parallel over a shared stem,
+differing only in kernel size, and uses the disagreement between their
+predictions as an uncertainty estimate. At 4.2M parameters it reaches an AUPRC
+of 0.6426 on the held-out test set against 0.7009 for the strongest pretrained
+baseline, with overlapping 95% confidence intervals.
 
-## Scope
+**Not a medical device.** This is a research artifact. It is not validated for
+clinical use and must not inform any diagnosis or treatment decision.
 
-**In scope:** architecture design, training, evaluation, statistical comparison,
-explainability.
+## Results
 
-**Out of scope** (removed in S0): ONNX export, TensorRT compilation, Triton Inference
-Server, FastAPI serving, latency benchmarking.
+Test set: 4,006 radiographs, 22.5% positive. Bootstrap 95% confidence intervals
+over 2,000 resamples.
 
-## Why the rewrite
+| Model | Params | AUPRC | 95% CI | AUROC | F1 | Bal. acc |
+|---|---|---|---|---|---|---|
+| EfficientNet-B0 | 4.01M | 0.7009 | [0.6699, 0.7288] | 0.8766 | 0.6065 | 0.7860 |
+| ResNet50 | 23.51M | 0.6849 | [0.6536, 0.7140] | 0.8718 | 0.6312 | 0.7811 |
+| DenseNet121 | 6.96M | 0.6824 | [0.6529, 0.7120] | 0.8706 | 0.6287 | 0.7962 |
+| **VeritasXR** | **4.22M** | 0.6426 | [0.6111, 0.6742] | 0.8492 | 0.6020 | 0.7642 |
+| HOG + linear SVM | 6,085 feat | 0.3834 | [0.3585, 0.4059] | 0.7297 | 0.5434 | 0.7240 |
 
-A review of the previous version found three problems that invalidated its headline
-claims:
+Three readings worth stating plainly:
 
-1. **The uncertainty head was never trained.** The training loop discarded the model's
-   second output (`verdicts, _ = model(imgs)`), so the uncertainty head's 528,577
-   parameters received no gradient and remained at their initialisation — while still
-   being served as a clinical triage recommendation.
-2. **The benchmark table compared different models.** The "PyTorch baseline" latency was
-   a hardcoded ResNet50 literal that was never measured, and the Triton figure came from
-   `xray_classifier` — a model deleted in `b7ed44e`. The only valid comparison present
-   was ~3.3x, not the 13x claimed.
-3. **The model comparison held nothing constant.** VeritasXR and the ResNet baselines
-   differed in loss function, epoch count, learning rate, schedule, initialisation, input
-   channels, augmentation and checkpoint-selection metric. The accuracy gap was therefore
-   not attributable to architecture.
+- **VeritasXR's interval overlaps all three pretrained baselines.** On a single
+  seed it is not statistically distinguishable from models initialised on
+  ImageNet, despite training from random initialisation on 18,677 images. Only
+  the classical control separates cleanly.
+- **Capacity is not the limiting factor.** ResNet50 carries 5.6x the parameters
+  of EfficientNet-B0 and does not outperform it. On a dataset this size, more
+  model buys nothing.
+- **Deep learning earns its place, measurably.** The HOG + SVM control sits
+  0.26 AUPRC below the deep models, which is what makes that gap a result
+  rather than an assumption.
 
-## Plan
+**Accuracy is deliberately absent from the headline.** At 22.5% prevalence a
+model that always predicts negative scores 77.5% accuracy while detecting
+nothing. Accuracy is recorded in the run artifacts for completeness and is never
+used to select a checkpoint; AUPRC is.
 
-| Stage | Work | Status |
-|---|---|---|
-| S0 | Remove the serving stack, restructure into a package | **done** |
-| S1 | Migrate to RSNA Pneumonia with patient-level splits | next |
-| S2 | One training harness shared by every model | |
-| S3 | Fix and slim the custom CNN; add a self-ablation | |
-| S4 | Train every model across 3 seeds | |
-| S5 | Metrics with bootstrap CIs and significance testing | |
-| S6 | Grad-CAM localisation scored against radiologist boxes | |
-| S7 | Report and figures generated from results files | |
+## Architecture
 
-## Dataset change
+```
+input 1x224x224
+  |
+  stem: Conv 11x11 s2 -> Conv 3x3 -> MaxPool          64x56x56
+  |
+  +-- local pathway  (3x3 kernels)  3 bottleneck stages -> SE -> GAP   384
+  +-- global pathway (7x7 kernels)  3 bottleneck stages -> SE -> GAP   384
+  |
+  gate: softmax(MLP([local; global]))                 per-input weights
+  merged = w0*local + w1*global
+  |
+  +-- classifier -> verdict (2 logits)
+  +-- per-pathway linear heads -> Jensen-Shannon divergence -> uncertainty
+```
 
-The previous dataset (Kaggle `chest_xray`) is **pediatric only, ages 1–5, from a single
-hospital**, with an official validation split of 16 images. Results obtained on it cannot
-be claimed to generalise to adults, and a 16-image validation set makes checkpoint
-selection noise-dominated.
+| Decision | Reason |
+|---|---|
+| 11x11 stem | Radiographic signal is diffuse texture rather than sharp edges, so the first layer looks wide |
+| Two kernel scales | The 3x3 branch resolves ~119 px of the 224 px field, the 7x7 branch ~215 px — local detail against whole-lung structure |
+| Squeeze-excitation | Channel attention using global context, 8,464 parameters per branch |
+| Per-input merge gate | Blend weights are predicted from the image, not learned as a dataset-wide constant |
+| Derived uncertainty | Jensen-Shannon divergence between two independently supervised pathway heads. No part of the uncertainty path is a free parameter, so it cannot silently go untrained |
 
-It is replaced by the **RSNA Pneumonia Detection Challenge** dataset. Figures below are
-measured from the download and counted per image, not per annotation row:
+The uncertainty signal is epistemic: pathways that agree while both being wrong
+score as confident. Adding the predictive entropy of the merged verdict would
+cover the aleatoric component.
 
-| | Kaggle `chest_xray` | RSNA Pneumonia |
-|---|---|---|
-| Labelled images | 5,856 | 26,684 |
-| Population | pediatric, 1–5 years | adults |
-| Sites | 1 hospital | multi-site (from NIH CXR14) |
-| Labels | binary, physician | 1–3 board-certified radiologists |
-| Positive rate | 74% pneumonia | 22.5% lung opacity |
-| Label granularity | 2 classes | 3 classes + boxes |
-| Bounding boxes | none | 9,555 boxes over 6,012 images |
-| Validation split | 16 images | patient-wise, ~15% (~4,000) |
+## Dataset
 
-Per-image class distribution:
+**RSNA Pneumonia Detection Challenge** — 26,684 labelled radiographs of adults
+from multiple sites, annotated by one to three board-certified radiologists with
+bounding boxes around opacities.
 
 | Class | Images | Share |
 |---|---|---|
@@ -76,29 +85,41 @@ Per-image class distribution:
 | Normal | 8,851 | 33.2% |
 | Lung Opacity (`Target=1`) | 6,012 | 22.5% |
 
-Note that RSNA is *more* imbalanced than the dataset it replaces, in the opposite
-direction. At 22.5% prevalence **accuracy is not a usable metric** — a model that always
-predicts negative scores 77.5%. S5 therefore reports AUROC, AUPRC, F1 and balanced
-accuracy, and the imbalance is handled identically for every model by the shared harness.
+Split by patient into 18,677 train / 4,001 validation / 4,006 test. Splits are
+stratified on the **three-class** label rather than the binary target, so the
+hard middle class — radiographically abnormal but not pneumonia, and 44% of the
+data — stays proportional across splits. `tests/test_no_leakage.py` asserts no
+patient appears in more than one split, and fails if a leak is injected.
 
-To be explicit about what the dataset change does and does not fix: it does **not** make
-the models comparable. That was never a data problem — it came from training each model
-under a different loss, schedule and selection metric, and S2's single harness is what
-fixes it. What the dataset buys is 4.6x the images, an adult multi-site population,
-radiologist labels rather than one physician's, a validation set large enough for
-checkpoint selection to mean anything, and the bounding boxes that make S6 possible.
+The primary task is binary pneumonia detection; every manifest carries the
+three-class label, so the three-class variant is a configuration change.
 
-Splits are stratified on the 3-class label rather than the binary target, so the hard
-middle class — abnormal but not pneumonia — stays proportional across train, val and
-test. The primary task remains binary pneumonia detection for continuity with the
-previous version; every manifest carries the `class` column, so the 3-class variant is a
-one-line change.
+## Comparability
 
-## Performance notes
+Every model reads one configuration file. Loss, optimiser, learning rate,
+schedule, augmentation, mixed-precision policy, early-stopping rule and
+checkpoint-selection metric are shared, so differences in the results table are
+attributable to the model rather than to the setup.
+
+Only two things vary per model, both recorded in `configs/default.yaml` with
+their justification:
+
+- **Channel count and normalisation.** An ImageNet-pretrained backbone needs
+  three channels and its own statistics for its weights to mean anything; the
+  custom model is natively single-channel. This is correct usage, not a
+  confound.
+- **The classical baseline has no epochs.** Learning rate and schedule are
+  undefined for an SVM, so its departures are listed in a `deviations` field in
+  its own results rather than glossed over. It shares the data, the splits, the
+  class-weighting and the results contract.
+
+Augmentation deliberately excludes horizontal flipping. Mirroring a chest
+radiograph places the heart on the right, which is situs inversus — a rare
+pathology, not a valid view of a normal chest.
+
+## Performance
 
 Measured on an RTX 3070 Ti Laptop (8 GB), batch 32, 8 dataloader workers.
-
-Training-step throughput, and what the bottleneck is *not*:
 
 | Model | it/s | min/epoch |
 |---|---|---|
@@ -107,53 +128,50 @@ Training-step throughput, and what the bottleneck is *not*:
 | EfficientNet-B0 | 3.66 | 2.66 |
 | DenseNet121 | 2.11 | 4.61 |
 
-DenseNet121 is the slowest of the four despite having 6.96M parameters against
-ResNet50's 23.51M: its concatenation-heavy design is memory-bandwidth bound, so
-throughput here is set by per-model GPU behaviour rather than by parameter count.
+DenseNet121 is the slowest of the four despite holding 6.96M parameters against
+ResNet50's 23.51M: its concatenation-heavy design is memory-bandwidth bound.
+Throughput here is set by per-model GPU behaviour, not by parameter count.
 
-**Rejected: GPU-side batched augmentation.** The data loader in isolation reaches
-27.9 it/s decoding only, against 13.3 with single-channel CPU augmentation and
-9.3 with three-channel, which suggested augmentation was the limiter. Moving it
-to the GPU as per-sample affine matrices (one resample instead of two) measured
-**1.02x end to end** across the four models, and 0.93x for VeritasXR. The
-loader-only figures were misleading because they were taken with all cores idle
-and no GPU work competing; in real training the augmentation was never on the
-critical path. Not adopted -- the implementation is in the history if it is ever
-worth revisiting at a larger batch size.
-
-One trap worth recording: `torchvision.transforms.v2` applied to a batched
-tensor draws a single set of random parameters for the whole batch, so every
-image in a batch receives the identical crop and rotation. That would look like
-a clean speedup while quietly collapsing augmentation diversity.
+**Measured and rejected: GPU-side batched augmentation.** The data loader in
+isolation reaches 27.9 it/s decoding only, against 13.3 with single-channel CPU
+augmentation, which suggested augmentation was the bottleneck. Moving it to the
+GPU as per-sample affine matrices measured **1.02x end to end**, and 0.93x for
+VeritasXR — the loader-only figures were taken with all cores idle and no GPU
+work competing, and augmentation was never on the critical path. Worth recording
+so it is not rediscovered.
 
 ## Models compared
 
 | Model | Class | Params |
 |---|---|---|
-| HOG + linear SVM | classical ML, no deep learning | 6,085 features |
+| HOG + linear SVM | classical computer vision, no deep learning | 6,085 features |
 | ResNet50 | residual CNN, ImageNet pretrained | 23.51M |
 | DenseNet121 | dense CNN, ImageNet pretrained (CheXNet backbone) | 6.96M |
 | EfficientNet-B0 | efficient CNN, ImageNet pretrained | 4.01M |
-| VeritasXR | custom dual-pathway CNN, trained from scratch | 17.02M, slimming to ~6M in S3 |
+| VeritasXR | custom dual-pathway CNN, trained from scratch | 4.22M |
 
 Parameter counts are measured with a two-class head, not the ImageNet
-1000-class figures that are usually quoted.
-
-The HOG + SVM entry is the control for whether deep learning is needed at all.
-EfficientNet-B0 is the size-matched rival once VeritasXR is slimmed.
+1000-class figures usually quoted. EfficientNet-B0 is the size-matched
+comparison for VeritasXR; the HOG + SVM entry is the control for whether deep
+learning is needed at all.
 
 ## Layout
 
 ```
+configs/default.yaml          the shared training recipe
+scripts/
+├── prepare_rsna.py           DICOM -> PNG cache + patient-wise manifests
+└── export_web_data.py        run artifacts -> docs/data/summary.json
 src/
-├── data/            dataset and manifest loading        (S1)
-├── models/
-│   └── veritasxr.py custom dual-pathway CNN
-├── training/
-│   ├── train_veritasxr.py
-│   └── train_resnet_ablation.py   kept for reference; superseded in S2
-└── evaluation/
-    └── analysis.py  EDA and metric plots
+├── data/                     manifest-backed dataset
+├── models/                   architecture and model registry
+├── training/                 shared harness, classical baseline
+└── evaluation/               metric plots
+tests/
+├── test_no_leakage.py        split integrity, with an injected-leak control
+└── test_model.py             gradient coverage, per-input gate, parameter budget
+docs/                         the static site
+train.py                      entry point
 ```
 
 ## Setup
@@ -161,6 +179,10 @@ src/
 ```bash
 python -m venv .venv && ./.venv/bin/pip install -r requirements.txt
 ```
+
+Requires an NVIDIA GPU for training. The dataset is the
+[RSNA Pneumonia Detection Challenge](https://www.kaggle.com/c/rsna-pneumonia-detection-challenge)
+on Kaggle; accept the competition rules and place the archive in `data/raw/`.
 
 ## Running it
 
@@ -171,18 +193,45 @@ python scripts/prepare_rsna.py --raw data/raw --out data/processed
 # 2. the gate: splits must be leakage-free before anything trains
 python tests/test_no_leakage.py
 
-# 3. smoke test -- one epoch over a few batches for all five models
+# 3. architecture checks: gradient coverage, per-input gate, parameter budget
+python tests/test_model.py
+
+# 4. smoke test -- one epoch over a few batches for all five models
 python train.py --smoke
 
-# 4. a single run, or every model across every seed
+# 5. a single run, every model across every seed, or the ablation sweep
 python train.py --model veritasxr --seed 0
 python train.py --model all
+python train.py --model veritasxr --ablation all
+
+# 6. regenerate the site's data
+python scripts/export_web_data.py
 ```
 
-Results land in `results/<model>_seed<seed>/` as `metrics.json` plus
-`test_scores.npz`. The per-sample test scores are saved so that bootstrap
-confidence intervals and significance tests can be run later without
-retraining anything.
+Results land in `results/<model>_seed<seed>/` as `metrics.json`,
+`progress.csv` and `test_scores.npz`. Per-sample test scores are saved so that
+bootstrap intervals and significance tests can be run without retraining.
 
-Developed against an NVIDIA RTX 3070 (8 GB). Training configs in S2 are sized for that;
-adjust batch size for other cards.
+## Ablation
+
+The constructor flags are the ablation. `python train.py --model veritasxr
+--ablation all` sweeps every variant:
+
+| Variant | Tests |
+|---|---|
+| `full` | — |
+| `no_se` | Does squeeze-excitation earn its parameters? |
+| `local_only` | Is the 3x3 branch sufficient alone? (1.01M params) |
+| `global_only` | Is the 7x7 branch sufficient alone? (3.30M params) |
+| `fixed_merge` | Does the merge weight do anything at all? |
+| `scalar_merge` | Is a dataset-wide weight as good as a per-input gate? |
+| `concat_merge` | Does summing the pathways lose information against concatenating? |
+
+## Limitations
+
+- Single dataset, single task, no external validation cohort.
+- One shared learning rate for every model rather than a per-model sweep.
+- Labels derive from radiologist report review, not confirmed microbiology.
+- Uncertainty is epistemic only.
+- Results in the table above are from one seed; multi-seed intervals are
+  regenerated by re-running the exporter once additional seeds complete.
