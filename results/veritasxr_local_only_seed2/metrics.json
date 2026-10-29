@@ -1,0 +1,192 @@
+{
+  "model": "veritasxr",
+  "run": "veritasxr_local_only",
+  "ablation": "local_only",
+  "seed": 2,
+  "kind": "deep",
+  "params_total": 1008348,
+  "params_trainable": 1008348,
+  "aux_heads_supervised": true,
+  "aux_loss_weight": 0.3,
+  "lr": 0.0003,
+  "epochs_run": 14,
+  "best_epoch": 9,
+  "best_val_auprc": 0.6237471904993641,
+  "train_seconds": 240.1,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.8440724754926475,
+      "lr": 0.0003,
+      "val_auprc": 0.5195775646159706,
+      "val_auroc": 0.791239124986574,
+      "val_f1": 0.5384615384615384
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.7605754759667464,
+      "lr": 0.00029917828430524096,
+      "val_auprc": 0.5486788489990914,
+      "val_auroc": 0.7951201174322438,
+      "val_f1": 0.5393721049922799
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.7353275323200389,
+      "lr": 0.0002967221401100708,
+      "val_auprc": 0.5174479519024293,
+      "val_auroc": 0.7938290788013318,
+      "val_f1": 0.5421030582320905
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.7170769502225094,
+      "lr": 0.00029265847744427303,
+      "val_auprc": 0.5803959197892012,
+      "val_auroc": 0.8186369983172819,
+      "val_f1": 0.5540334855403348
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.696081866224266,
+      "lr": 0.0002870318186463901,
+      "val_auprc": 0.5873405796872158,
+      "val_auroc": 0.8289670974902439,
+      "val_f1": 0.5789043336058871
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.68819332577761,
+      "lr": 0.0002799038105676658,
+      "val_auprc": 0.6049562434456249,
+      "val_auroc": 0.834698184812574,
+      "val_f1": 0.5757322175732218
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.6736998559066811,
+      "lr": 0.0002713525491562421,
+      "val_auprc": 0.5981329302965247,
+      "val_auroc": 0.832360101679138,
+      "val_f1": 0.5627118644067797
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.6629517979114787,
+      "lr": 0.00026147172382160914,
+      "val_auprc": 0.6075168003424762,
+      "val_auroc": 0.8333095843328202,
+      "val_f1": 0.580737901293723
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.6572464799083526,
+      "lr": 0.00025036959095382875,
+      "val_auprc": 0.6237471904993641,
+      "val_auroc": 0.845365543661165,
+      "val_f1": 0.5922454196847039
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.6491255586899779,
+      "lr": 0.000238167787843871,
+      "val_auprc": 0.6138341785483751,
+      "val_auroc": 0.8463434893129498,
+      "val_f1": 0.588093322606597
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.6407450208533076,
+      "lr": 0.00022500000000000002,
+      "val_auprc": 0.6031877384020079,
+      "val_auroc": 0.8431466828971393,
+      "val_f1": 0.588334742180896
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.6345678943099125,
+      "lr": 0.0002110104964613701,
+      "val_auprc": 0.6176300774862178,
+      "val_auroc": 0.8478597257527478,
+      "val_f1": 0.592431491953023
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.6267529674398347,
+      "lr": 0.00019635254915624216,
+      "val_auprc": 0.609099793917526,
+      "val_auroc": 0.8462810139271777,
+      "val_f1": 0.5714285714285714
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.6269189175569786,
+      "lr": 0.00018118675362266393,
+      "val_auprc": 0.6132934873958268,
+      "val_auroc": 0.8448360244889193,
+      "val_f1": 0.5770416024653313
+    }
+  ],
+  "test": {
+    "auroc": 0.8332321559281216,
+    "auprc": 0.6019467474815312,
+    "f1": 0.5795783381562629,
+    "balanced_accuracy": 0.7568260844272805,
+    "sensitivity": 0.7763012181616833,
+    "specificity": 0.7373509506928778,
+    "accuracy": 0.7461308037943085,
+    "threshold": 0.5,
+    "confusion": {
+      "tn": 2288,
+      "fp": 815,
+      "fn": 202,
+      "tp": 701
+    },
+    "n": 4006,
+    "positives": 903
+  },
+  "device": "NVIDIA GeForce RTX 3070 Ti Laptop GPU",
+  "torch": "2.14.1+cu130",
+  "config": {
+    "data": {
+      "root": "data/processed",
+      "train": "train.csv",
+      "val": "val.csv",
+      "test": "test.csv",
+      "image_size": 224
+    },
+    "train": {
+      "max_epochs": 30,
+      "batch_size": 32,
+      "optimizer": "adamw",
+      "lr": 0.0003,
+      "weight_decay": 0.0001,
+      "scheduler": "cosine",
+      "warmup_epochs": 1,
+      "amp_dtype": "bfloat16",
+      "num_workers": 8,
+      "early_stop_patience": 5,
+      "select_metric": "val_auprc",
+      "class_weighting": "balanced",
+      "aux_loss_weight": 0.3
+    },
+    "augment": {
+      "crop_scale": [
+        0.85,
+        1.0
+      ],
+      "crop_ratio": [
+        0.95,
+        1.05
+      ],
+      "rotation_degrees": 10,
+      "brightness": 0.1,
+      "contrast": 0.1
+    }
+  },
+  "per_model": {
+    "in_channels": 1,
+    "normalize": "half",
+    "pretrained": false
+  }
+}
