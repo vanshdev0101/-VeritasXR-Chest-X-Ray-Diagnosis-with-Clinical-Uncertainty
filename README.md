@@ -275,12 +275,12 @@ reversed this study's pathway ordering once already.
 
 | Model / pathway | Pointing game | Mass in box | IoU @ 0.5 |
 |---|---|---|---|
-| **EfficientNet-B0** | **0.7154 ± 0.0177** | 0.3401 | 0.2731 |
-| ResNet50 | 0.4042 ± **0.1475** | 0.2216 | 0.1549 |
-| DenseNet121 | 0.3178 ± 0.0356 | 0.2062 | 0.2170 |
+| **EfficientNet-B0** | **0.7154 ± 0.0177** | 0.3531 | 0.2837 |
+| ResNet50 | 0.4042 ± **0.1475** | 0.2221 | 0.1596 |
+| DenseNet121 | 0.3178 ± 0.0356 | 0.2005 | 0.2160 |
 | VeritasXR — local (3x3) | 0.2979 ± 0.0619 | 0.1372 | 0.1334 |
-| VeritasXR — merged | 0.2757 ± 0.0252 | 0.1485 | 0.1589 |
-| VeritasXR — global (7x7) | 0.2270 ± 0.0276 | **0.1499** | **0.1545** |
+| VeritasXR — merged (gated) | 0.2348 ± 0.0178 | **0.1510** | **0.1595** |
+| VeritasXR — global (7x7) | 0.2270 ± 0.0276 | 0.1499 | 0.1545 |
 | *chance (random point)* | *0.1240* | — | — |
 
 A random point lands in a box 12.40% of the time and the boxes cover 11.73% of
@@ -295,6 +295,14 @@ global branch is the only change that significantly hurts classification, the
 picture is that the two pathways contribute differently rather than one being
 redundant — which is what the architecture intended, even though the intended
 *benefit* does not materialise.
+
+The merged row is the map the model actually computes: the two pathway CAMs
+combined with the model's own per-input gate weights, not an equal blend. It
+is the best of the three on mass-in-box and IoU and the most stable of them
+(± 0.0178), while the local pathway alone keeps the best pointing score. So
+the fusion does buy something measurable — in *where the attention sits*,
+which is the one place the architecture's premise survives contact with the
+data.
 
 Their peaks coincide on 7.05% of images, so the branches are genuinely not
 duplicates.

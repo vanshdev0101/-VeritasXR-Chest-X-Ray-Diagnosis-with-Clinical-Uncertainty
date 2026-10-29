@@ -51,14 +51,29 @@ for label, key in NAME.items():
         if not near(float(row.group(1)), C[key]["ece"]):
             pass  # may have matched the results table instead; skip ambiguous
 
-# localisation numbers that appear as prose or table
-v = L["veritasxr"]
-for lbl, val in (("local", v["local_point"]["mean"]),
-                 ("global", v["global_point"]["mean"])):
-    if f"{val:.4f}" not in readme:
-        problems.append(f"README missing localisation {lbl} pointing {val:.4f}")
-    else:
-        checked += 1
+# Localisation: every value the README tabulates, not just the two pathways
+# that happened to be quoted in prose. A stale merged-CAM row survived an
+# earlier scan precisely because this loop only looked at two of the numbers.
+for model, series in L.items():
+    if model.startswith("_"):
+        continue
+    for metric, agg in series.items():
+        if not isinstance(agg, dict) or "mean" not in agg:
+            continue
+        if metric == "pathway_peak_agreement":
+            continue              # quoted as a percentage, checked separately
+        val = agg["mean"]
+        if f"{val:.4f}" not in readme:
+            problems.append(
+                f"README missing localisation {model}.{metric} {val:.4f}")
+        else:
+            checked += 1
+
+agree = L["veritasxr"]["pathway_peak_agreement"]["mean"]
+if f"{agree * 100:.2f}%" not in readme:
+    problems.append(f"README missing pathway peak agreement {agree * 100:.2f}%")
+else:
+    checked += 1
 
 # stale-claim scan
 # Every claim this study has had to retract, in every phrasing it was written
