@@ -127,20 +127,31 @@ function render(d) {
   /* ---------- paired significance ---------- */
   const sig = models.filter((m) => m.vs_veritasxr);
   table($('sig-table'),
-    ['Comparison', 'Δ AUPRC', '95% CI', 'p', 'Verdict'],
+    ['Comparison', 'Δ AUPRC', '95% CI', 'Worst-seed p', 'Verdict'],
     sig.map((m) => {
       const v = m.vs_veritasxr;
       const sign = v.diff >= 0 ? '+' : '';
+      const n = v.seeds || 1;
       return [
         `${m.label} − VeritasXR`,
         `${sign}${v.diff.toFixed(4)}`,
         `<span class="ci">[${v.ci[0]}, ${v.ci[1]}]</span>`,
         v.p < 0.0005 ? '&lt; 0.001' : v.p.toFixed(3),
         v.separated
-          ? `<span class="badge">separated</span>`
+          ? `<span class="badge">separated on ${n}/${n} seeds</span>`
           : `<span class="badge badge-pending">not separated</span>`,
       ];
     }));
+  const worst = sig.length ? sig.reduce((a, b) => (a.vs_veritasxr.p > b.vs_veritasxr.p ? a : b)) : null;
+  if (worst && $('sig-note')) {
+    $('sig-note').innerHTML =
+      `Run independently on each seed, not once on seed 0 — the earlier single-seed version
+       of this table did not reconcile with the mean AUPRC column above, which is what gave
+       it away. Δ is the mean over seeds and the p column reports the <em>weakest</em> seed.
+       The weakest of all ${sig.length * (sig[0].vs_veritasxr.seeds || 1)} tests is
+       ${worst.label} at p = ${worst.vs_veritasxr.p.toFixed(3)}; the rest are below 0.0001.
+       Every pair still separates on every seed.`;
+  }
 
   /* ---------- PR ---------- */
   new Chart($('pr-chart'), {

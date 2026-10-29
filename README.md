@@ -7,8 +7,8 @@ training protocol.
 The architecture runs two convolutional branches in parallel over a shared
 stem, differing only in kernel size. At 4.22M parameters it reaches an AUPRC of
 0.6410 ± 0.0039 over three seeds, against 0.6993 ± 0.0033 for the strongest
-pretrained baseline. A paired bootstrap separates them at p < 0.0001, so the
-gap is real rather than noise.
+pretrained baseline. A paired bootstrap run on each seed separates every pair
+on every seed, so the gap is real rather than noise.
 
 It was designed to use the disagreement between its two branches as an
 uncertainty signal. That was implemented, measured, and found not to work:
@@ -40,21 +40,25 @@ mean ± standard deviation.
 
 Differences are tested by paired bootstrap over 2,000 resamples: both models
 are scored on the *same* resampled test cases, so the shared difficulty of
-those cases cancels.
+those cases cancels. **Run independently on each of the three seeds** — the
+version of this table that shipped first was seed 0 only, which is why its
+figures did not reconcile with the mean AUPRC column above. Δ is the mean over
+seeds, and the p column reports the *weakest* seed rather than the best.
 
-| Comparison | Δ AUPRC | 95% CI | p |
-|---|---|---|---|
-| EfficientNet-B0 − VeritasXR | +0.0581 | [+0.0402, +0.0762] | < 0.0001 |
-| ResNet50 − VeritasXR | +0.0422 | [+0.0230, +0.0621] | < 0.0001 |
-| DenseNet121 − VeritasXR | +0.0397 | [+0.0215, +0.0588] | < 0.0001 |
-| HOG + SVM − VeritasXR | −0.2593 | [−0.2857, −0.2330] | < 0.0001 |
+| Comparison | Δ AUPRC | 95% CI | worst-seed p | Seeds separating |
+|---|---|---|---|---|
+| EfficientNet-B0 − VeritasXR | +0.0581 | [+0.0377, +0.0784] | < 0.0001 | 3 / 3 |
+| DenseNet121 − VeritasXR | +0.0459 | [+0.0267, +0.0651] | < 0.0001 | 3 / 3 |
+| ResNet50 − VeritasXR | +0.0335 | [+0.0128, +0.0537] | 0.0140 | 3 / 3 |
+| HOG + linear SVM − VeritasXR | −0.2589 | [−0.2850, −0.2326] | < 0.0001 | 3 / 3 |
 
 Four readings:
 
 - **Every pretrained baseline beats VeritasXR, significantly.** The gap is
-  0.040–0.058 AUPRC and the paired intervals exclude zero. ImageNet
-  initialisation is worth roughly 6–9% relative AUPRC on this task, and
-  training from scratch on 18,677 images does not close it.
+  0.034–0.058 AUPRC, every paired interval excludes zero, and it does so on all
+  three seeds independently. ImageNet initialisation is worth roughly 5–9%
+  relative AUPRC on this task, and training from scratch on 18,677 images does
+  not close it.
 - **Capacity is not the limiting factor.** ResNet50 carries 5.6x the parameters
   of EfficientNet-B0, finishes third, and has the highest seed-to-seed variance
   of any model (±0.0072). On a dataset this size more model buys instability,
@@ -70,8 +74,10 @@ A note on method, because the two analyses disagree: the marginal 95% intervals
 for VeritasXR and the pretrained models overlap, which invites the conclusion
 that the difference is unresolved. That inference is wrong. Overlapping
 marginal intervals do not imply the absence of a significant difference; the
-paired test above is the correct comparison and it separates every pair at
-p < 0.0001.
+paired test above is the correct comparison and it separates every pair on
+every seed. The weakest of those twelve tests is ResNet50 on its best seed, at
+p = 0.014; the rest are below 0.0001. Quoting p < 0.0001 for all of them, as
+this section did while the test ran on seed 0 alone, overstated it.
 
 ### The operating point matters more than it looks
 

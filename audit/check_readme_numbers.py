@@ -40,6 +40,36 @@ for label, key in NAME.items():
         problems.append(f"{label} AUPRC: README {nums[0]} vs data "
                         f"{m['metrics']['auprc']['mean']}")
 
+# Paired-significance table, and the cross-check that caught it being
+# single-seed: the paired delta must reconcile with the difference of the two
+# mean AUPRCs in the results table. It did not, for a year of commits, because
+# the delta came from seed 0 and the means from three.
+ref_auprc = models["veritasxr"]["metrics"]["auprc"]["mean"] if "veritasxr" in models else None
+for label, key in NAME.items():
+    m = models.get(key)
+    if not m or key == "veritasxr" or "vs_veritasxr" not in m:
+        continue
+    v = m["vs_veritasxr"]
+    expect = m["metrics"]["auprc"]["mean"] - ref_auprc
+    checked += 1
+    if abs(v["diff"] - expect) > 2e-3:
+        problems.append(
+            f"{label}: paired delta {v['diff']:+.4f} does not reconcile with the "
+            f"difference of mean AUPRCs ({expect:+.4f}) -- is it single-seed?")
+    checked += 1
+    if v.get("seeds", 1) < 3:
+        problems.append(f"{label}: paired test ran on {v.get('seeds', 1)} seed(s)")
+    row = re.search(rf"\|\s*{re.escape(label)} − VeritasXR\s*\|([^\n]*)", readme)
+    if not row:
+        problems.append(f"README significance: no row for {label}")
+        continue
+    nums = re.findall(r"[+−-]0\.\d{4}", row.group(1))
+    if nums:
+        checked += 1
+        got = float(nums[0].replace("−", "-").replace("+", ""))
+        if not near(got, v["diff"]):
+            problems.append(f"{label} paired delta: README {got} vs data {v['diff']}")
+
 # Calibration table. This block used to search the whole README with a regex
 # that could match the results table instead, and then `pass` on a mismatch --
 # so it verified nothing while counting as a check. It now reads the section it

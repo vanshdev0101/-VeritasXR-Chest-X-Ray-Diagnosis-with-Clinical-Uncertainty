@@ -166,6 +166,17 @@ def main():
             ],
         }
 
+        # Every seed's scores, not just the first: the paired significance test
+        # below was running on seed 0 alone, which is the same single-seed
+        # mistake that reversed the ablation and the calibration results.
+        entry["_all_scores"] = {}
+        for d, m in entries:
+            f = d / "test_scores.npz"
+            if f.is_file():
+                z = np.load(f, allow_pickle=True)
+                entry["_all_scores"][m["seed"]] = (z["y_true"].astype(int),
+                                                   z["y_score"].astype(float))
+
         npz = d0 / "test_scores.npz"
         if npz.is_file():
             z = np.load(npz, allow_pickle=True)
@@ -195,15 +206,33 @@ def main():
     # Paired significance against the custom model, which is the comparison the
     # study is actually making.
     ref = next((m for m in models if m["id"] == "veritasxr"), None)
-    if ref is not None and "_scores" in ref:
-        yr, sr = ref["_scores"]
+    if ref is not None and ref.get("_all_scores"):
         for m in models:
-            if m is ref or "_scores" not in m:
+            if m is ref or not m.get("_all_scores"):
                 continue
-            m["vs_veritasxr"] = paired_diff(yr, m["_scores"][1], sr,
-                                            average_precision_score, args.bootstrap)
+            per_seed = []
+            for seed, (yr, sr) in sorted(ref["_all_scores"].items()):
+                if seed not in m["_all_scores"]:
+                    continue
+                r = paired_diff(yr, m["_all_scores"][seed][1], sr,
+                                average_precision_score, args.bootstrap)
+                per_seed.append(dict(r, seed=seed))
+            if not per_seed:
+                continue
+            signs = {r["diff"] > 0 for r in per_seed}
+            m["vs_veritasxr"] = {
+                "diff": round(float(np.mean([r["diff"] for r in per_seed])), 4),
+                "ci": [round(float(np.mean([r["ci"][0] for r in per_seed])), 4),
+                       round(float(np.mean([r["ci"][1] for r in per_seed])), 4)],
+                "p": max(r["p"] for r in per_seed),
+                "separated": all(r["separated"] for r in per_seed),
+                "same_sign": len(signs) == 1,
+                "per_seed": per_seed,
+                "seeds": len(per_seed),
+            }
     for m in models + ablations:
         m.pop("_scores", None)
+        m.pop("_all_scores", None)
     test_n = models[0]["confusion"]
     pos = test_n["tp"] + test_n["fn"]
     total = sum(test_n.values())
