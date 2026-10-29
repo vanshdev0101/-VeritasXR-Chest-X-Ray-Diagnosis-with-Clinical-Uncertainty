@@ -193,11 +193,14 @@ def write_results(out_dir, payload, y_true=None, y_score=None, ids=None):
 
 
 def train_deep(name, cfg, seed, device, max_epochs=None, limit_batches=None,
-               batch_size=None, workers=None, out_root=None, ablation=None):
+               batch_size=None, workers=None, out_root=None, ablation=None,
+               tag=None):
     spec = cfg["per_model"][name]
     set_seed(seed)
 
     run = f"{name}_{ablation}" if ablation else name
+    if tag:
+        run = f"{run}_{tag}"
     loaders = make_loaders(cfg, spec, batch_size=batch_size, workers=workers)
     model = build_model(name, spec, ablation=ablation).to(device)
     total, trainable = count_params(model)

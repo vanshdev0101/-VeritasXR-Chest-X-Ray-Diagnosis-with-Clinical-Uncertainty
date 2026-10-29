@@ -49,6 +49,9 @@ class Tee:
 
 def run_one(name, cfg, seed, device, args, ablation=None):
     label = f"{name}_{ablation}" if ablation else name
+    tag = f"lr{args.lr:g}" if getattr(args, "lr", None) else None
+    if tag:
+        label = f"{label}_{tag}"
     print(f"\n=== {label} | seed {seed} ===", flush=True)
     if name == "hog_svm":
         from src.training.hog_svm import run as run_svm
@@ -59,7 +62,8 @@ def run_one(name, cfg, seed, device, args, ablation=None):
         payload, yt, st, ids = train_deep(
             name, cfg, seed, device,
             max_epochs=args.max_epochs, limit_batches=args.limit_batches,
-            batch_size=args.batch_size, workers=args.workers, ablation=ablation)
+            batch_size=args.batch_size, workers=args.workers, ablation=ablation,
+            tag=tag)
     out = Path(cfg["output_dir"]) / f"{label}_seed{seed}"
     write_results(out, payload, yt, st, ids)
     t = payload["test"]
@@ -87,6 +91,9 @@ def main():
                     help="VeritasXR variant(s); 'all' sweeps every variant")
     ap.add_argument("--log-file", type=Path,
                     help="mirror all output here so a background run is tailable")
+    ap.add_argument("--lr", type=float,
+                    help="override the shared learning rate for this model; the "
+                         "run is tagged so it cannot collide with the headline runs")
     ap.add_argument("--skip-existing", action="store_true",
                     help="skip runs whose metrics.json already exists, so an "
                          "interrupted sweep resumes instead of redoing work")
@@ -97,6 +104,12 @@ def main():
         print(f"--- logging to {args.log_file} ---", flush=True)
 
     cfg = yaml.safe_load(args.config.read_text())
+    if args.lr:
+        # Written into lr_overrides so the departure from the shared recipe is
+        # recorded in the run's own metrics.json rather than left implicit.
+        cfg.setdefault("lr_overrides", {})
+        for m in MODELS:
+            cfg["lr_overrides"][m] = args.lr
     if args.smoke:
         args.max_epochs = args.max_epochs or 1
         args.limit_batches = args.limit_batches or 4
