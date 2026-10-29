@@ -31,12 +31,19 @@
 <main id="main"><div class="wrap">
 
   <section>
-    <h1>Pneumonia classification with pathway disagreement as uncertainty</h1>
+    <h1>Pneumonia classification with a dual-pathway CNN</h1>
     <p class="lede">
-      A 4.2M-parameter dual-pathway CNN trained from scratch. Two branches read
-      the same image at different kernel scales; their disagreement is the
-      uncertainty estimate. Everything below runs in your browser — the image
-      never leaves your device and there is no server.
+      A 4.2M-parameter CNN trained from scratch. Two branches read the same
+      image at different kernel scales, and each produces its own attention map.
+      Everything below runs in your browser — the image never leaves your
+      device and there is no server.
+    </p>
+    <p class="lede">
+      The architecture was designed to treat disagreement between those
+      branches as its uncertainty signal. Measured against the model's own
+      errors that scores AUROC 0.5046, which is chance, so the model reports
+      predictive entropy instead and shows the disagreement value alongside it
+      as a recorded negative result.
     </p>
     <p id="model-state"><span class="badge badge-pending" id="model-badge">checking for model…</span></p>
   </section>

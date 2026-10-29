@@ -4,11 +4,20 @@ A custom dual-pathway CNN evaluated against three ImageNet-pretrained CNNs and a
 classical computer-vision baseline on chest radiographs, under a single shared
 training protocol.
 
-The architecture runs two convolutional branches in parallel over a shared stem,
-differing only in kernel size, and uses the disagreement between their
-predictions as an uncertainty estimate. At 4.2M parameters it reaches an AUPRC
-of 0.6426 on the held-out test set against 0.7009 for the strongest pretrained
-baseline, with overlapping 95% confidence intervals.
+The architecture runs two convolutional branches in parallel over a shared
+stem, differing only in kernel size. At 4.22M parameters it reaches an AUPRC of
+0.6410 ± 0.0039 over three seeds, against 0.6993 ± 0.0033 for the strongest
+pretrained baseline. A paired bootstrap separates them at p < 0.0001, so the
+gap is real rather than noise.
+
+It was designed to use the disagreement between its two branches as an
+uncertainty signal. That was implemented, measured, and found not to work:
+against the model's own errors it scores AUROC 0.5046, which is chance. The
+model reports predictive entropy instead, and the negative result is kept
+rather than quietly dropped — along with two others, since neither the
+per-input merge gate nor squeeze-excitation survives a multi-seed ablation.
+What does survive is calibration, where VeritasXR is the best model in the
+study by a factor of 3.6.
 
 **Not a medical device.** This is a research artifact. It is not validated for
 clinical use and must not inform any diagnosis or treatment decision.

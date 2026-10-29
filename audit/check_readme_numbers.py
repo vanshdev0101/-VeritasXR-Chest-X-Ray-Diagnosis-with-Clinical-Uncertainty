@@ -61,16 +61,39 @@ for lbl, val in (("local", v["local_point"]["mean"]),
         checked += 1
 
 # stale-claim scan
+# Every claim this study has had to retract, in every phrasing it was written
+# in. The list grew after a scan passed while the README's opening paragraph
+# still carried a retracted claim in different words -- matching on one
+# phrasing is not enough.
 stale = [
     ("3x3 pathway outperforms the 7x7", "reversed by multi-seed"),
     ("at a third of the cost", "reversed by multi-seed"),
     ("barely localising", "seed-0 artifact"),
     ("1.6x chance", "seed-0 artifact"),
-    ("not statistically distinguishable", "wrong test, paired bootstrap separates"),
+    ("not statistically distinguishable", "wrong test; paired bootstrap separates"),
+    ("overlapping 95% confidence interval", "same wrong inference, other wording"),
+    ("intervals overlap", "same wrong inference, other wording"),
+    ("uses the disagreement between their predictions as an uncertainty",
+     "disagreement was rejected; the model reports predictive entropy"),
+    ("disagreement as an uncertainty estimate", "rejected, AUROC 0.5046"),
+    ("0.6426", "seed-0 AUPRC; the three-seed mean is 0.6410"),
+    ("0.7009 for the strongest", "seed-0 value; three-seed mean is 0.6993"),
+    ("inter-path disagreement", "never implemented in the form claimed"),
 ]
-for phrase, why in stale:
-    if phrase.lower() in readme.lower():
-        problems.append(f"STALE CLAIM in README: '{phrase}' ({why})")
+# Scan the README *and* the site. A scan that covered only the README passed
+# while the demo page's h1 still announced a retracted claim as its headline.
+targets = {"README.md": readme}
+for q in list(Path("docs").glob("*.html")) + list(Path("docs/assets/js").glob("*.js")):
+    targets[str(q)] = q.read_text()
+
+site_stale = stale + [
+    ("disagreement as uncertainty", "rejected; AUROC 0.5046 against error"),
+    ("their disagreement is the uncertainty", "rejected"),
+]
+for where, text in targets.items():
+    for phrase, why in site_stale:
+        if phrase.lower() in text.lower():
+            problems.append(f"STALE CLAIM in {where}: '{phrase}' ({why})")
 
 print(f"  checked {checked} README values against the data files")
 print(f"  problems: {len(problems)}")
