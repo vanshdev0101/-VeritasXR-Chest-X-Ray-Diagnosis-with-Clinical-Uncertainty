@@ -159,6 +159,50 @@ Disagreement is still computed and exposed, labelled as a measured negative
 result rather than removed, because the negative result is the honest output of
 having tested the design.
 
+## Localisation — where is each model looking?
+
+RSNA ships bounding boxes drawn by board-certified radiologists around the
+opacities they identified, which allows a question the accuracy table cannot
+answer: when a model says pneumonia, is it looking at the right place?
+
+Scored over all 903 positive test images. VeritasXR's pathway heads are linear
+on pooled features, so their maps are plain CAM with no gradients; the
+baselines need Grad-CAM on their final convolutional block. Pointing game asks
+whether the map's peak falls inside a box and has no threshold to tune.
+
+| Model / pathway | Pointing game | Mass in box | IoU @ 0.5 |
+|---|---|---|---|
+| **EfficientNet-B0** | **0.7121** | **0.3423** | **0.2754** |
+| ResNet50 | 0.4585 | 0.2281 | 0.1512 |
+| **VeritasXR — local (3x3)** | 0.3654 | 0.1406 | 0.1430 |
+| VeritasXR — merged | 0.3034 | 0.1466 | 0.1534 |
+| DenseNet121 | 0.2990 | 0.2033 | 0.2199 |
+| VeritasXR — global (7x7) | 0.1993 | 0.1427 | 0.1267 |
+| *chance (random point)* | *0.1240* | — | — |
+
+The chance figure is a useful sanity check: a random point lands in a box
+12.40% of the time, and the boxes cover 11.73% of the image.
+
+**The global pathway is barely localising.** At 0.1993 against a chance floor
+of 0.1240 it is 1.6x chance, while the local pathway is 2.9x. The 3.3M
+parameter branch is not finding the opacity. Taken with the ablation, where it
+also loses on classification while costing 3.3x the parameters, that is two
+independent measurements pointing the same way.
+
+**The pathways do attend to different regions.** Their peaks coincide on only
+5.09% of images, so the two branches are genuinely not redundant — the
+architectural premise holds. What does not hold is the benefit: the diversity
+is not useful when one branch is substantially worse, and merging the two
+scores below the local pathway alone (0.3034 against 0.3654). Blending in the
+weaker map drags down the better one, which is consistent with `local_only`
+nearly matching `full` in the ablation.
+
+**EfficientNet-B0 is the best localiser as well as the best classifier**, at
+5.7x chance and nearly double the best VeritasXR pathway, while being the
+smallest of the pretrained models. Classification accuracy and localisation
+quality are not the same property and need not travel together, so this is
+worth stating rather than assuming.
+
 ## Dataset
 
 **RSNA Pneumonia Detection Challenge** — 26,684 labelled radiographs of adults

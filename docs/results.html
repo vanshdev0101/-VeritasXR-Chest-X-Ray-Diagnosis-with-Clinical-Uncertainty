@@ -7,7 +7,7 @@
 <meta name="description" content="Comparative study of five models for chest radiograph pneumonia classification, with bootstrap confidence intervals, training curves and ablations.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="favicon.svg">
-<link rel="stylesheet" href="assets/css/app.css?v=ddcb491">
+<link rel="stylesheet" href="assets/css/app.css?v=b08e427">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -129,6 +129,40 @@
     </div>
   </section>
 
+  <section id="localisation">
+    <h2>Where is each model looking?</h2>
+    <p class="lede">
+      The dataset ships bounding boxes drawn by board-certified radiologists
+      around the opacities they identified, which allows a question accuracy
+      cannot answer: when a model says pneumonia, is it looking at the right
+      place? Scored over all 903 positive test images. The pointing game asks
+      whether the attention peak falls inside a box — no threshold to tune.
+    </p>
+    <div class="card">
+      <div class="table-scroll"><table id="loc-table">
+        <caption>Attention against radiologist annotations. VeritasXR uses CAM,
+          which is exact for its linear pathway heads; the baselines use Grad-CAM.</caption>
+      </table></div>
+      <p class="hint" id="loc-note" style="max-width:none"></p>
+    </div>
+    <figure class="card" style="margin:var(--space-4) 0 0">
+      <h3>The two pathways do not look at the same thing</h3>
+      <img src="assets/img/localisation.png" alt="Four chest radiographs in three
+        columns: the radiograph with cyan radiologist boxes, the local 3x3
+        pathway's attention map, and the global 7x7 pathway's attention map. A
+        green cross marks each map's peak. The local pathway's peak falls inside
+        the annotated box; the global pathway's peak falls on the image edge or
+        body margin, outside it." style="width:100%;height:auto;border-radius:var(--radius)">
+      <figcaption style="padding-top:var(--space-3)">
+        Cases where the local pathway's peak lands inside a radiologist box and
+        the global pathway's does not. The global pathway repeatedly settles on
+        the image border and body margin rather than lung tissue — a shortcut
+        its wide receptive field makes available, and a plausible reason it both
+        localises near chance and classifies worse.
+      </figcaption>
+    </figure>
+  </section>
+
   <section>
     <h2>Ablation — does each design decision earn its place?</h2>
     <p class="lede">Variants of the custom model, each removing or replacing one
@@ -170,7 +204,7 @@
 </div></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="assets/js/disclaimer.js?v=ddcb491"></script>
-<script src="assets/js/results.js?v=ddcb491"></script>
+<script src="assets/js/disclaimer.js?v=b08e427"></script>
+<script src="assets/js/results.js?v=b08e427"></script>
 </body>
 </html>

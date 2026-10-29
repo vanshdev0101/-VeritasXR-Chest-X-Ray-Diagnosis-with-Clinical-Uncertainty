@@ -1,0 +1,109 @@
+{
+ "veritasxr": {
+  "local_point": {
+   "mean": 0.3654,
+   "std": 0.4816,
+   "n": 903
+  },
+  "local_mass": {
+   "mean": 0.1406,
+   "std": 0.1144,
+   "n": 903
+  },
+  "local_iou": {
+   "mean": 0.143,
+   "std": 0.1114,
+   "n": 903
+  },
+  "global_point": {
+   "mean": 0.1993,
+   "std": 0.3995,
+   "n": 903
+  },
+  "global_mass": {
+   "mean": 0.1427,
+   "std": 0.1167,
+   "n": 903
+  },
+  "global_iou": {
+   "mean": 0.1267,
+   "std": 0.1065,
+   "n": 903
+  },
+  "merged_point": {
+   "mean": 0.3034,
+   "std": 0.4597,
+   "n": 903
+  },
+  "merged_mass": {
+   "mean": 0.1466,
+   "std": 0.1202,
+   "n": 903
+  },
+  "merged_iou": {
+   "mean": 0.1534,
+   "std": 0.1235,
+   "n": 903
+  },
+  "pathway_peak_agreement": {
+   "mean": 0.0509,
+   "n": 903
+  }
+ },
+ "resnet50": {
+  "point": {
+   "mean": 0.4585,
+   "std": 0.4983,
+   "n": 903
+  },
+  "mass": {
+   "mean": 0.2281,
+   "std": 0.171,
+   "n": 903
+  },
+  "iou": {
+   "mean": 0.1512,
+   "std": 0.1241,
+   "n": 903
+  }
+ },
+ "densenet121": {
+  "point": {
+   "mean": 0.299,
+   "std": 0.4578,
+   "n": 903
+  },
+  "mass": {
+   "mean": 0.2033,
+   "std": 0.1509,
+   "n": 903
+  },
+  "iou": {
+   "mean": 0.2199,
+   "std": 0.158,
+   "n": 903
+  }
+ },
+ "efficientnet_b0": {
+  "point": {
+   "mean": 0.7121,
+   "std": 0.4528,
+   "n": 903
+  },
+  "mass": {
+   "mean": 0.3423,
+   "std": 0.2071,
+   "n": 903
+  },
+  "iou": {
+   "mean": 0.2754,
+   "std": 0.1835,
+   "n": 903
+  }
+ },
+ "_chance": {
+  "random_point_in_box": 0.124,
+  "mean_box_area_fraction": 0.1173,
+  "n": 903
+ }
+}

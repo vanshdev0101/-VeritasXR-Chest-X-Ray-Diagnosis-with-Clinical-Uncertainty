@@ -236,6 +236,39 @@ function render(d) {
       return [m.label, at(0.25), at(0.5), at(1.0)];
     }));
 
+  /* ---------- localisation ---------- */
+  fetch('data/localisation.json').then((r) => r.ok ? r.json() : null).then((L) => {
+    if (!L) return;
+    const v = L.veritasxr, chance = L._chance.random_point_in_box;
+    const rows = [
+      ['EfficientNet-B0', L.efficientnet_b0 && L.efficientnet_b0.point,
+       L.efficientnet_b0 && L.efficientnet_b0.mass, L.efficientnet_b0 && L.efficientnet_b0.iou],
+      ['ResNet50', L.resnet50 && L.resnet50.point, L.resnet50 && L.resnet50.mass,
+       L.resnet50 && L.resnet50.iou],
+      ['VeritasXR — local 3x3', v.local_point, v.local_mass, v.local_iou],
+      ['VeritasXR — merged', v.merged_point, v.merged_mass, v.merged_iou],
+      ['DenseNet121', L.densenet121 && L.densenet121.point,
+       L.densenet121 && L.densenet121.mass, L.densenet121 && L.densenet121.iou],
+      ['VeritasXR — global 7x7', v.global_point, v.global_mass, v.global_iou],
+    ].filter((r) => r[1]).sort((a, b) => b[1].mean - a[1].mean);
+
+    table($('loc-table'), ['Model / pathway', 'Pointing game', 'Mass in box', 'IoU @ 0.5'],
+      rows.map((r) => ({
+        cls: r[0].startsWith('VeritasXR') ? 'is-ours' : '',
+        cells: [r[0], f4(r[1].mean), f4(r[2].mean), f4(r[3].mean)],
+      })).concat([{ cls: '', cells: [
+        '<em>chance — random point</em>', `<em>${f4(chance)}</em>`,
+        `<em class="ci">boxes cover ${pct(L._chance.mean_box_area_fraction)}</em>`, '—'] }]));
+
+    $('loc-note').innerHTML =
+      `The global 7x7 pathway scores ${f4(v.global_point.mean)} against a chance floor of
+       ${f4(chance)} — only ${(v.global_point.mean / chance).toFixed(1)}x random, while the
+       local 3x3 pathway reaches ${(v.local_point.mean / chance).toFixed(1)}x. The two
+       pathways' peaks coincide on just ${pct(v.pathway_peak_agreement.mean)} of images, so
+       they genuinely attend to different regions — but the diversity does not pay, and
+       merging them scores below the local pathway alone.`;
+  });
+
   /* ---------- ablation ---------- */
   if (d.ablations && d.ablations.length) {
     table($('abl-table'), ['Variant', 'Params', 'AUPRC', 'AUROC', 'F1', 'Δ AUPRC vs full'],
