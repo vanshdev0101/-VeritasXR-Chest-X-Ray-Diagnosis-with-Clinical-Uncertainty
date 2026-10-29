@@ -236,6 +236,38 @@ function render(d) {
       return [m.label, at(0.25), at(0.5), at(1.0)];
     }));
 
+  /* ---------- operating point ---------- */
+  fetch('data/thresholds.json').then((r) => r.ok ? r.json() : null).then((T) => {
+    if (!T) return;
+    const nm = { efficientnet_b0: 'EfficientNet-B0', densenet121: 'DenseNet121',
+                 resnet50: 'ResNet50', veritasxr: 'VeritasXR' };
+    const byTuned = Object.keys(T).sort(
+      (a, b) => T[b].agg.f1_at_tuned.mean - T[a].agg.f1_at_tuned.mean);
+    const byHalf = Object.keys(T).sort(
+      (a, b) => T[b].agg.f1_at_half.mean - T[a].agg.f1_at_half.mean);
+    table($('thr-table'),
+      ['Model', 'Tuned t', 'F1 @ 0.5', 'F1 @ tuned', 'Δ'],
+      byTuned.map((k) => {
+        const a = T[k].agg, d = a.f1_at_tuned.mean - a.f1_at_half.mean;
+        return {
+          cls: k === 'veritasxr' ? 'is-ours' : '',
+          cells: [nm[k] || k, T[k].threshold_mean.toFixed(2),
+                  f4(a.f1_at_half.mean), f4(a.f1_at_tuned.mean),
+                  (d >= 0 ? '+' : '') + d.toFixed(4)],
+        };
+      }));
+    const changed = byHalf.join() !== byTuned.join();
+    $('thr-note').innerHTML =
+      `The F1 ranking ${changed ? '<strong>changes</strong>' : 'does not change'} when the
+       operating point is tuned: ${byHalf.map((k) => nm[k] || k).join(' &gt; ')} at 0.5
+       becomes ${byTuned.map((k) => nm[k] || k).join(' &gt; ')} tuned. The first ordering
+       contradicts AUPRC and AUROC, which are threshold-free and both rank
+       ${nm[byTuned[0]]} first; the second agrees with them. ResNet50's own optimum is
+       ${T.resnet50 ? T.resnet50.threshold_mean.toFixed(2) : '—'}, essentially the default,
+       so it was already being read at its best point while the others were not. VeritasXR
+       is last under either convention, so this correction does not flatter it.`;
+  });
+
   /* ---------- calibration ---------- */
   fetch('data/calibration.json').then((r) => r.ok ? r.json() : null).then((C) => {
     if (!C) return;

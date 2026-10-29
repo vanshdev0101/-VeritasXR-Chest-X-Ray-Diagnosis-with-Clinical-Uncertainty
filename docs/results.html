@@ -129,6 +129,24 @@
     </div>
   </section>
 
+  <section id="threshold">
+    <h2>The operating point matters more than it looks</h2>
+    <p class="lede">
+      Every threshold-dependent metric above uses a fixed 0.5. That is not
+      neutral: training uses a class-weighted loss, which shifts predictions,
+      and these models differ in calibration by more than an order of
+      magnitude, so 0.5 sits at a different place on each one's distribution.
+      Tuned on the validation split — never on test.
+    </p>
+    <div class="card">
+      <div class="table-scroll"><table id="thr-table">
+        <caption>F1 at the default cut against a validation-tuned one, mean over
+          three seeds.</caption>
+      </table></div>
+      <p class="hint" id="thr-note" style="max-width:none"></p>
+    </div>
+  </section>
+
   <section id="calibration">
     <h2>Are the probabilities believable?</h2>
     <p class="lede">
@@ -238,6 +256,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="assets/js/disclaimer.js?v=a33d8fe1"></script>
-<script src="assets/js/results.js?v=47df8cc5"></script>
+<script src="assets/js/results.js?v=257b891c"></script>
 </body>
 </html>

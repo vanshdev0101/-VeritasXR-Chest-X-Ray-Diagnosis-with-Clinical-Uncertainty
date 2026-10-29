@@ -61,6 +61,37 @@ marginal intervals do not imply the absence of a significant difference; the
 paired test above is the correct comparison and it separates every pair at
 p < 0.0001.
 
+### The operating point matters more than it looks
+
+Every threshold-dependent metric above is computed at a fixed 0.5. That is not
+a neutral choice. Training uses a class-weighted loss, which shifts
+predictions, and these models differ in calibration by more than an order of
+magnitude, so 0.5 sits at a different place on each one's distribution.
+
+Tuning the threshold on the validation split — never on test:
+
+| Model | Tuned t | F1 @ 0.5 | F1 @ tuned | Δ |
+|---|---|---|---|---|
+| EfficientNet-B0 | 0.63 | 0.6182 | **0.6431** | +0.0249 |
+| DenseNet121 | 0.65 | 0.6166 | 0.6339 | +0.0173 |
+| ResNet50 | 0.49 | 0.6267 | 0.6282 | +0.0015 |
+| VeritasXR | 0.55 | 0.5989 | 0.5961 | −0.0028 |
+
+**The F1 ranking changes.** At 0.5 it reads ResNet50 > EfficientNet-B0 >
+DenseNet121, which contradicts AUPRC and AUROC — both threshold-free, and both
+ranking EfficientNet-B0 first. Tuned, the ordering becomes EfficientNet-B0 >
+DenseNet121 > ResNet50 and the contradiction disappears.
+
+The reason is visible in the tuned thresholds themselves: ResNet50's optimum is
+0.49, essentially the default, so it was already being evaluated at its best
+point while the others were not. An F1 column at a fixed cut was therefore
+measuring how well each model's calibration happened to suit 0.5, not how well
+it separates the classes.
+
+VeritasXR is last under either convention, so the correction does not flatter
+it. It is included because an evaluation that only gets fixed when the result
+improves is not an evaluation.
+
 **Accuracy is deliberately absent from the headline.** At 22.5% prevalence a
 model that always predicts negative scores 77.5% accuracy while detecting
 nothing. Accuracy is recorded in the run artifacts for completeness and is never
@@ -307,6 +338,34 @@ their justification:
   undefined for an SVM, so its departures are listed in a `deviations` field in
   its own results rather than glossed over. It shares the data, the splits, the
   class-weighting and the results contract.
+
+### Threats to validity
+
+Stated here rather than left for a reader to find.
+
+- **VeritasXR carries one hyperparameter the baselines do not.** Its per-pathway
+  heads are supervised with an auxiliary loss at weight 0.3. That is an extra
+  degree of freedom in the custom model's favour, though it was fixed at 0.3 by
+  choice rather than tuned, so it is unexercised freedom rather than an
+  advantage taken.
+- **The validation split does double duty.** It selects the checkpoint by early
+  stopping and then tunes the operating point. Both uses are legitimate and
+  neither touches test, but reusing one split for two selections makes the
+  validation figures slightly optimistic as estimates of held-out performance.
+- **Twenty-two paired tests were run** — four in the main comparison and
+  eighteen across the ablation — with no multiple-comparison correction. At a
+  nominal 5% level, roughly one in twenty would separate by chance alone. This
+  is why the ablation is reported by sign consistency across seeds rather than
+  by counting individual separations: a variant that separates on one seed and
+  reverses on another is exactly what a false positive looks like.
+- **The classical baseline has no tuned operating point.** Its scores are a
+  logistic squash of an unbounded SVM margin and saturate near 1, so a threshold
+  on them is not comparable to one on a calibrated probability. Its
+  threshold-dependent metrics stay at 0.5 and should be read as indicative.
+- **Class weighting and threshold tuning overlap.** Training reweights the
+  classes and evaluation then tunes the decision threshold, which partially
+  undoes the shift. Both are applied identically to every deep model, so the
+  comparison is unaffected, but neither is independent of the other.
 
 Augmentation deliberately excludes horizontal flipping. Mirroring a chest
 radiograph places the heart on the right, which is situs inversus — a rare
