@@ -243,7 +243,7 @@ def train_deep(name, cfg, seed, device, max_epochs=None, limit_batches=None,
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device_type=device.type, dtype=amp_dtype):
                 if supports_aux:
-                    verdict, _, heads, _ = model(x, aux=True)
+                    verdict, _, heads, *_ = model(x, aux=True)
                     loss = criterion(verdict, y)
                     for h in heads.values():
                         loss = loss + aux_w * criterion(h, y)

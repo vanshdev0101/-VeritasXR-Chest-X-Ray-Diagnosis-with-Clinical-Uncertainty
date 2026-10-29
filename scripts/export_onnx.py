@@ -53,13 +53,12 @@ class VeritasXRForWeb(nn.Module):
         merged, _ = m._merge(pooled_list)
         verdict = m.classifier(merged)
 
-        if len(m.path_names) > 1:
-            unc = m._disagreement([logits[n] for n in m.path_names])
-        else:
-            unc = m._entropy(verdict)
+        unc = m._entropy(verdict)
+        dis = (m._disagreement([logits[n] for n in m.path_names])
+               if len(m.path_names) > 1 else torch.zeros_like(unc))
 
         probs = F.softmax(verdict, dim=1)
-        return (probs, unc,
+        return (probs, unc, dis,
                 cams[m.path_names[0]],
                 cams[m.path_names[-1]])
 
@@ -86,9 +85,11 @@ def main():
         wrapper, (dummy,), str(args.out),
         export_params=True, opset_version=args.opset,
         input_names=["input"],
-        output_names=["verdict", "uncertainty", "cam_local", "cam_global"],
+        output_names=["verdict", "uncertainty", "disagreement",
+                      "cam_local", "cam_global"],
         dynamic_axes={k: {0: "batch"} for k in
-                      ("input", "verdict", "uncertainty", "cam_local", "cam_global")},
+                      ("input", "verdict", "uncertainty", "disagreement",
+                       "cam_local", "cam_global")},
         do_constant_folding=True,
         # torch 2.14 defaults to the dynamo exporter, whose generated FX code
         # fails to parse under Python 3.14. The TorchScript path exports this

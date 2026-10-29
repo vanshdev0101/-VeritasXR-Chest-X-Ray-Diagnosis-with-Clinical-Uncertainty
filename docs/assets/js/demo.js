@@ -14,10 +14,17 @@ const GLYPH = {
   moderate: '<circle cx="12" cy="12" r="9"/><path d="M12 8v4m0 4h.01"/>',
   low: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4m0 4h.01"/>',
 };
+// Thresholds are the 60th and 85th percentile of predictive entropy on the
+// VALIDATION split, never the test set. Arbitrary round numbers put every case
+// in one band: the original 0.4/0.7 cutoffs left 100% of the test set in "high
+// confidence", which made the triage decorative.
 const BANDS = [
-  [0.4, 'high', 'High confidence', 'The two pathways agree closely.'],
-  [0.7, 'moderate', 'Moderate confidence', 'The pathways differ somewhat; a second read is reasonable.'],
-  [Infinity, 'low', 'Low confidence', 'The pathways disagree substantially. Treat this prediction as unreliable.'],
+  [0.829, 'high', 'Higher confidence',
+   'Among the most confident ~60% of cases. On validation data this band is right about 90% of the time.'],
+  [0.981, 'moderate', 'Moderate confidence',
+   'The prediction is closer to the decision boundary. Worth a second look.'],
+  [Infinity, 'low', 'Low confidence',
+   'The model is near-undecided. Treat this prediction as unreliable.'],
 ];
 
 const $ = (id) => document.getElementById(id);
@@ -126,6 +133,12 @@ async function predict(img) {
   $('verdict').textContent = CLASSES[idx];
   $('probs').textContent = `NORMAL ${(p[0] * 100).toFixed(1)}% · PNEUMONIA ${(p[1] * 100).toFixed(1)}%`;
   $('latency').textContent = `${ms.toFixed(0)} ms`;
+
+  const disT = get('disagree');
+  if (disT) {
+    const d = Number(disT.data[0]);
+    $('disagree').textContent = d.toFixed(4);
+  }
 
   const uncT = get('uncertain');
   if (uncT) {

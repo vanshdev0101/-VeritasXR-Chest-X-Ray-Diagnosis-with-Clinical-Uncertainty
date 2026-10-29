@@ -92,10 +92,11 @@
         <span class="sub" id="probs">—</span>
       </div>
       <div class="card stat">
-        <span class="label">Uncertainty · pathway disagreement</span>
+        <span class="label">Uncertainty · predictive entropy</span>
         <span class="value" id="unc">—</span>
         <div class="meter" aria-hidden="true"><i id="unc-bar" style="width:0"></i></div>
-        <span class="sub">Jensen–Shannon divergence between the two pathway heads, 0–1</span>
+        <span class="sub">Entropy of the verdict, 0–1. Predicts this model's own
+          errors at AUROC 0.76.</span>
       </div>
       <div class="card stat">
         <span class="label">Inference</span>
@@ -114,7 +115,19 @@
       </div>
       <p class="hint" style="margin-top:var(--space-3)">
         The band is conveyed by its label and icon as well as its colour.
-        Thresholds are the project's own convention, not a clinical standard.
+        Thresholds are the 60th and 85th percentile of entropy on the validation
+        split — a property of this model, not a clinical standard.
+      </p>
+      <hr style="border:0;border-top:1px solid var(--color-border);margin:var(--space-4) 0">
+      <p class="hint" style="max-width:none">
+        <strong>Pathway disagreement: <span id="disagree">—</span></strong> —
+        reported, but not used. This architecture was designed to treat
+        disagreement between its two pathways as the uncertainty signal. Measured
+        against the model's own errors it scores AUROC 0.5046, which is chance,
+        and combining it with entropy makes entropy worse. Both heads are trained
+        on the same labels with the same loss, so they converge toward each other
+        and rarely disagree at all. The number is shown because the negative
+        result is part of the finding.
       </p>
     </div>
   </section>

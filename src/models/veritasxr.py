@@ -245,14 +245,24 @@ class VeritasXR(nn.Module):
         merged, weights = self._merge(pooled)
         verdict = self.classifier(merged)
 
-        if len(self.path_names) > 1:
-            uncertainty = self._disagreement(list(path_logits.values()))
-        else:
-            uncertainty = self._entropy(verdict)
+        # Predictive entropy, not pathway disagreement.
+        #
+        # Disagreement was the original design and it was measured against the
+        # model's own errors: AUROC 0.5046, which is chance. Both pathway heads
+        # are supervised on the same labels with the same loss, so they converge
+        # toward each other and their divergence carries almost no information
+        # (max 0.111 across the test set, never reaching any useful threshold).
+        # Predictive entropy reaches AUROC 0.7563 on the same comparison, and
+        # adding disagreement to it makes it worse (0.7471). So entropy is the
+        # uncertainty output; disagreement is still computed and returned under
+        # aux, as a measured negative result rather than a signal to act on.
+        uncertainty = self._entropy(verdict)
 
         if not aux:
             return verdict, uncertainty
-        return verdict, uncertainty, path_logits, weights
+        disagreement = (self._disagreement(list(path_logits.values()))
+                        if len(self.path_names) > 1 else None)
+        return verdict, uncertainty, path_logits, weights, disagreement
 
 
 def get_model(**kwargs):

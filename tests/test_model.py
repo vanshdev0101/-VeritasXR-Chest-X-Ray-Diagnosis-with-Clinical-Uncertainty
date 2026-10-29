@@ -24,7 +24,7 @@ BATCH = 4
 
 def loss_for(model, x, y):
     """The S3 training objective: merged verdict plus both per-path heads."""
-    verdict, _, heads, _ = model(x, aux=True)
+    verdict, _, heads, _, _ = model(x, aux=True)
     crit = nn.CrossEntropyLoss()
     loss = crit(verdict, y)
     for logits in heads.values():
@@ -85,16 +85,16 @@ def test_gate_is_per_input():
     """The README's 'per input' claim, which the old global nn.Parameter broke."""
     m = build_ablation("full").eval()
     with torch.no_grad():
-        _, _, _, w1 = m(torch.randn(BATCH, 1, 224, 224), aux=True)
-        _, _, _, w2 = m(torch.randn(BATCH, 1, 224, 224) * 2 - 1, aux=True)
+        _, _, _, w1, _ = m(torch.randn(BATCH, 1, 224, 224), aux=True)
+        _, _, _, w2, _ = m(torch.randn(BATCH, 1, 224, 224) * 2 - 1, aux=True)
     assert w1 is not None and w1.shape == (BATCH, 2)
     assert torch.allclose(w1.sum(1), torch.ones(BATCH), atol=1e-5), "gate must sum to 1"
     assert not torch.allclose(w1, w2), "gate does not vary with the input"
     # And the ablation that removes it really is input-independent.
     s = build_ablation("scalar_merge").eval()
     with torch.no_grad():
-        _, _, _, sw1 = s(torch.randn(BATCH, 1, 224, 224), aux=True)
-        _, _, _, sw2 = s(torch.randn(BATCH, 1, 224, 224) * 2 - 1, aux=True)
+        _, _, _, sw1, _ = s(torch.randn(BATCH, 1, 224, 224), aux=True)
+        _, _, _, sw2, _ = s(torch.randn(BATCH, 1, 224, 224) * 2 - 1, aux=True)
     assert torch.allclose(sw1, sw2), "scalar_merge should be input-independent"
     print("  ok  gate varies per input; scalar_merge ablation is global, as intended")
 

@@ -60,8 +60,9 @@ def main():
         dp += float(np.abs(tp - op).mean())
         dmax = max(dmax, float(np.abs(tp - op).max()))
         du = max(du, float(np.abs(t[1].numpy() - o[1]).max()))
-        dcam = max(dcam, max(float(np.abs(t[2].numpy() - o[2]).max()),
-                             float(np.abs(t[3].numpy() - o[3]).max())))
+        du = max(du, float(np.abs(t[2].numpy() - o[2]).max()))   # disagreement
+        dcam = max(dcam, max(float(np.abs(t[3].numpy() - o[3]).max()),
+                             float(np.abs(t[4].numpy() - o[4]).max())))
         if int(tp.argmax()) != int(op.argmax()):
             disagree += 1
 
