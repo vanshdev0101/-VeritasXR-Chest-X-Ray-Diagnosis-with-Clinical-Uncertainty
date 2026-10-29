@@ -424,12 +424,20 @@ learning is needed at all.
 configs/default.yaml          the shared training recipe
 scripts/
 ├── prepare_rsna.py           DICOM -> PNG cache + patient-wise manifests
-└── export_web_data.py        run artifacts -> docs/data/summary.json
+├── export_web_data.py        run artifacts -> docs/data/summary.json
+├── eval_thresholds.py        validation-tuned operating points
+├── eval_calibration.py       reliability, ECE, Brier
+├── eval_localisation.py      attention vs radiologist boxes
+├── export_onnx.py            checkpoint -> browser model
+├── check_onnx_parity.py      ONNX must reproduce PyTorch
+└── stamp_assets.py           content-hash cache busting
+audit/                        verification scripts: recompute every published
+                              number from artifacts, scan for retracted claims
 src/
 ├── data/                     manifest-backed dataset
 ├── models/                   architecture and model registry
 ├── training/                 shared harness, classical baseline
-└── evaluation/               metric plots
+└── evaluation/               localisation scoring
 tests/
 ├── test_no_leakage.py        split integrity, with an injected-leak control
 └── test_model.py             gradient coverage, per-input gate, parameter budget
