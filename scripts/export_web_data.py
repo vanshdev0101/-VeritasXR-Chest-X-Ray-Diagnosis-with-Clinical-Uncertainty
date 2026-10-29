@@ -83,6 +83,37 @@ def collect(results: Path):
     return runs
 
 
+def learning_rate_probe(runs):
+    """Seed-0 AUPRC per model per learning rate, including the shared rate.
+
+    Tests whether one shared lr for every model is what holds the custom model
+    back. Ablation variants are excluded: they share the rate but not the
+    architecture, so they would overwrite the shared-rate point.
+    """
+    shared, pts = None, defaultdict(dict)
+    for entries in runs.values():
+        for _, m in entries:
+            if m["seed"] != 0 or m.get("ablation") is not None:
+                continue
+            shared = m["config"]["train"]["lr"]
+            pts[m["model"]][m.get("lr") or shared] = round(m["test"]["auprc"], 4)
+
+    rows = []
+    for model, by_lr in pts.items():
+        if len(by_lr) < 2 or shared not in by_lr:
+            continue                      # no probe was run for this model
+        best = max(by_lr, key=by_lr.get)
+        rows.append({
+            "model": model,
+            "label": LABELS.get(model, (model, ""))[0],
+            "points": sorted(by_lr.items()),
+            "best_lr": best,
+            "gain": round(by_lr[best] - by_lr[shared], 4),
+        })
+    return {"shared_lr": shared, "seed": 0,
+            "models": sorted(rows, key=lambda r: -r["gain"])}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", type=Path, default=Path("results"))
@@ -95,7 +126,11 @@ def main():
 
     for run, entries in sorted(runs.items()):
         base = entries[0][1]["model"]
-        is_abl = entries[0][1].get("ablation") is not None
+        m_any = entries[0][1]
+        is_abl = m_any.get("ablation") is not None
+        # Learning-rate probe runs are reported on their own, not as models.
+        if m_any.get("lr") not in (None, m_any["config"]["train"]["lr"]):
+            continue
         seeds = sorted(m["seed"] for _, m in entries)
 
         # mean +/- std across seeds for every headline metric
@@ -188,6 +223,7 @@ def main():
         },
         "models": models,
         "ablations": sorted(ablations, key=lambda m: -m["metrics"]["auprc"]["mean"]),
+        "lr_probe": learning_rate_probe(runs),
         "pending": [k for k in ("significance", "localisation") ],
     }
 

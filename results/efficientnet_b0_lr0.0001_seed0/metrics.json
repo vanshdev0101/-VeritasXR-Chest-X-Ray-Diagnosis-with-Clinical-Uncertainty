@@ -1,0 +1,163 @@
+{
+  "model": "efficientnet_b0",
+  "run": "efficientnet_b0_lr0.0001",
+  "ablation": null,
+  "seed": 0,
+  "kind": "deep",
+  "test_at_tuned_threshold": {
+    "auroc": 0.8796838268542321,
+    "auprc": 0.6953856528141406,
+    "f1": 0.6486751717369971,
+    "balanced_accuracy": 0.7896245158384574,
+    "sensitivity": 0.7320044296788483,
+    "specificity": 0.8472446019980664,
+    "accuracy": 0.8212680978532202,
+    "threshold": 0.73,
+    "confusion": {
+      "tn": 2629,
+      "fp": 474,
+      "fn": 242,
+      "tp": 661
+    },
+    "n": 4006,
+    "positives": 903
+  },
+  "tuned_threshold": 0.73,
+  "params_total": 4010110,
+  "params_trainable": 4010110,
+  "aux_heads_supervised": false,
+  "aux_loss_weight": 0.3,
+  "lr": 0.0001,
+  "epochs_run": 8,
+  "best_epoch": 3,
+  "best_val_auprc": 0.6998907832592379,
+  "train_seconds": 422.0,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.4812173931819497,
+      "lr": 0.0001,
+      "val_auprc": 0.6809066257430093,
+      "val_auroc": 0.8756306612724214,
+      "val_f1": 0.6262197708952058
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.4360867969525617,
+      "lr": 9.972609476841367e-05,
+      "val_auprc": 0.6990461032789926,
+      "val_auroc": 0.8836695786044181,
+      "val_f1": 0.6436781609195402
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.41378964412171476,
+      "lr": 9.890738003669029e-05,
+      "val_auprc": 0.6998907832592379,
+      "val_auroc": 0.8846912033224732,
+      "val_f1": 0.6030449313033791
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.389539724736639,
+      "lr": 9.755282581475769e-05,
+      "val_auprc": 0.6990158671578913,
+      "val_auroc": 0.8851247717589774,
+      "val_f1": 0.622062923138192
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.36476967510596353,
+      "lr": 9.567727288213003e-05,
+      "val_auprc": 0.6885886413389195,
+      "val_auroc": 0.8829238122516201,
+      "val_f1": 0.6304973284011508
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.34580798606878693,
+      "lr": 9.330127018922194e-05,
+      "val_auprc": 0.6911614699301479,
+      "val_auroc": 0.8801376606637786,
+      "val_f1": 0.6302979437683592
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.31406179223829434,
+      "lr": 9.045084971874738e-05,
+      "val_auprc": 0.6757229316924582,
+      "val_auroc": 0.875377358490566,
+      "val_f1": 0.6345067362016514
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.2899503621239196,
+      "lr": 8.715724127386972e-05,
+      "val_auprc": 0.6698315456087681,
+      "val_auroc": 0.8767217428663492,
+      "val_f1": 0.6417977528089888
+    }
+  ],
+  "test": {
+    "auroc": 0.8796838268542321,
+    "auprc": 0.6953856528141406,
+    "f1": 0.5942941830307521,
+    "balanced_accuracy": 0.7839077247788997,
+    "sensitivity": 0.8881506090808416,
+    "specificity": 0.6796648404769577,
+    "accuracy": 0.7266600099850224,
+    "threshold": 0.5,
+    "confusion": {
+      "tn": 2109,
+      "fp": 994,
+      "fn": 101,
+      "tp": 802
+    },
+    "n": 4006,
+    "positives": 903
+  },
+  "device": "NVIDIA GeForce RTX 3070 Ti Laptop GPU",
+  "torch": "2.14.1+cu130",
+  "config": {
+    "data": {
+      "root": "data/processed",
+      "train": "train.csv",
+      "val": "val.csv",
+      "test": "test.csv",
+      "image_size": 224
+    },
+    "train": {
+      "max_epochs": 30,
+      "batch_size": 32,
+      "optimizer": "adamw",
+      "lr": 0.0003,
+      "weight_decay": 0.0001,
+      "scheduler": "cosine",
+      "warmup_epochs": 1,
+      "amp_dtype": "bfloat16",
+      "num_workers": 8,
+      "early_stop_patience": 5,
+      "select_metric": "val_auprc",
+      "class_weighting": "balanced",
+      "aux_loss_weight": 0.3
+    },
+    "augment": {
+      "crop_scale": [
+        0.85,
+        1.0
+      ],
+      "crop_ratio": [
+        0.95,
+        1.05
+      ],
+      "rotation_degrees": 10,
+      "brightness": 0.1,
+      "contrast": 0.1
+    }
+  },
+  "per_model": {
+    "in_channels": 3,
+    "normalize": "imagenet",
+    "pretrained": true
+  }
+}

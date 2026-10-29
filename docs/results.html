@@ -154,11 +154,13 @@
       systematically overconfident — and the triage bands are read off the
       predicted distribution, so inflated probabilities produce inflated bands.
       A perfectly calibrated model sits on the diagonal; below it means
-      overconfident.
+      overconfident. Three seeds per model — this table was single-seed once,
+      and it overstated the custom model's advantage by an order of magnitude.
     </p>
     <div class="card">
       <div class="table-scroll"><table id="cal-table">
-        <caption>Expected and maximum calibration error, 15 bins, test set.</caption>
+        <caption>Expected and maximum calibration error, 15 bins, test set,
+          mean of three seeds.</caption>
       </table></div>
       <p class="hint" id="cal-note" style="max-width:none"></p>
     </div>
@@ -167,8 +169,9 @@
         plotting predicted confidence against observed accuracy for five models,
         with a diagonal marking perfect calibration. VeritasXR tracks the
         diagonal closely; ResNet50 and DenseNet121 fall well below it. Right: a
-        bar chart of expected calibration error, lowest for VeritasXR at 0.0059
-        and highest for HOG plus SVM at 0.2704."
+        bar chart of expected calibration error with min-max whiskers across three
+        seeds, lowest for EfficientNet-B0 at 0.0343 and highest for HOG plus SVM at
+        0.2715; VeritasXR's whisker is by far the widest."
         style="width:100%;height:auto;border-radius:var(--radius)">
     </figure>
   </section>
@@ -226,6 +229,42 @@
     </div>
   </section>
 
+  <section id="temperature">
+    <h2>Calibration is cheap to buy</h2>
+    <p class="lede">
+      Calibration is a property you can add after training: one temperature
+      fitted on the validation split, applied to the test logits. It leaves the
+      ranking exactly unchanged and moves an overconfident model onto the
+      diagonal. So if a model's calibration advantage is really an advantage,
+      it has to survive the baselines being given that same free scalar.
+    </p>
+    <div class="card">
+      <div class="table-scroll"><table id="temp-table">
+        <caption>One temperature per run, fitted on validation, mean of three
+          seeds. HOG + SVM is excluded: its probabilities are a logistic squash
+          of an unbounded margin, so a temperature there fits the squash.</caption>
+      </table></div>
+      <p class="hint" id="temp-note" style="max-width:none"></p>
+    </div>
+  </section>
+
+  <section id="lr-section">
+    <h2>Was one shared learning rate unfair to anyone?</h2>
+    <p class="lede">
+      Every model trains at the same rate, which is what makes the comparison a
+      comparison — but it is also the most obvious thing to blame for the custom
+      model's deficit. So it was measured rather than argued about: each model
+      retrained at a tenth and at three times the shared rate.
+    </p>
+    <div class="card">
+      <div class="table-scroll"><table id="lr-table">
+        <caption>Test AUPRC by learning rate, seed 0. Each model's own best rate
+          in bold.</caption>
+      </table></div>
+      <p class="hint" id="lr-note" style="max-width:none"></p>
+    </div>
+  </section>
+
   <section>
     <h2>Method and limitations</h2>
     <div class="grid grid-2">
@@ -237,7 +276,8 @@
         <h3>Known limitations</h3>
         <ul class="hint" style="max-width:none;padding-left:1.1rem">
           <li>Single dataset, single task. No external validation cohort.</li>
-          <li>One shared learning rate for every model rather than a per-model sweep.</li>
+          <li>The learning-rate probe is one seed per rate, three rates, and does not
+            interact with batch size or schedule.</li>
           <li>Labels derive from radiologist report review, not from confirmed microbiology.</li>
           <li>Horizontal flip is deliberately excluded: mirroring a radiograph implies situs inversus.</li>
           <li>Uncertainty is epistemic only — pathways that agree while both being wrong score as confident.</li>
@@ -256,6 +296,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="assets/js/disclaimer.js?v=a33d8fe1"></script>
-<script src="assets/js/results.js?v=257b891c"></script>
+<script src="assets/js/results.js?v=3ac57a5a"></script>
 </body>
 </html>

@@ -40,16 +40,58 @@ for label, key in NAME.items():
         problems.append(f"{label} AUPRC: README {nums[0]} vs data "
                         f"{m['metrics']['auprc']['mean']}")
 
-# calibration table
+# Calibration table. This block used to search the whole README with a regex
+# that could match the results table instead, and then `pass` on a mismatch --
+# so it verified nothing while counting as a check. It now reads the section it
+# is about, and fails.
+section = readme.split("## Calibration")[1].split("## Localisation")[0] \
+    if "## Calibration" in readme else ""
 for label, key in NAME.items():
-    if key not in C:
+    if key not in C or not section:
         continue
-    row = re.search(rf"\|\s*\**{re.escape(label)}\**\s*\|\s*(0\.\d{{4}})\s*\|\s*(0\.\d{{4}})\s*\|\s*(0\.\d{{4}})",
-                    readme)
-    if row:
+    row = re.search(rf"\|\s*\**{re.escape(label)}\**\s*\|([^\n]*)", section)
+    if not row:
+        problems.append(f"README calibration: no row for {label}")
+        continue
+    nums = [float(x) for x in re.findall(r"0\.\d{4}", row.group(1))]
+    if len(nums) < 4:
+        problems.append(f"README calibration row for {label}: unreadable")
+        continue
+    for got, want, what in ((nums[0], C[key]["ece"], "ECE"),
+                            (nums[1], C[key]["ece_std"], "ECE std"),
+                            (nums[2], C[key]["mce"], "MCE"),
+                            (nums[3], C[key]["brier"], "Brier")):
         checked += 1
-        if not near(float(row.group(1)), C[key]["ece"]):
-            pass  # may have matched the results table instead; skip ambiguous
+        if not near(got, want):
+            problems.append(f"{label} {what}: README {got} vs data {want}")
+
+# Temperature-scaling table, if the probe has been run.
+tpath = Path("docs/data/temperature.json")
+if tpath.is_file():
+    T = json.loads(tpath.read_text())
+    tsec = readme.split("calibration is cheap to buy".title())[-1] \
+        if "Calibration is cheap to buy" in readme else readme
+    for label, key in NAME.items():
+        if key not in T:
+            continue
+        row = re.search(rf"\|\s*\**{re.escape(label)}\**\s*\|\s*(\d\.\d{{3}})\s*\|([^\n]*)",
+                        tsec)
+        if not row:
+            problems.append(f"README temperature: no row for {label}")
+            continue
+        a = T[key]["agg"]
+        checked += 1
+        if not near(float(row.group(1)), a["temperature"], 5e-4):
+            problems.append(f"{label} temperature: README {row.group(1)} "
+                            f"vs data {a['temperature']}")
+        nums = [float(x) for x in re.findall(r"0\.\d{4}", row.group(2))]
+        for got, want, what in zip(nums, (a["before"]["ece"], a["after"]["ece"],
+                                          a["before"]["brier"], a["after"]["brier"]),
+                                   ("ECE before", "ECE after",
+                                    "Brier before", "Brier after")):
+            checked += 1
+            if not near(got, want):
+                problems.append(f"{label} {what}: README {got} vs data {want}")
 
 # Localisation: every value the README tabulates, not just the two pathways
 # that happened to be quoted in prose. A stale merged-CAM row survived an
@@ -94,6 +136,13 @@ stale = [
     ("0.6426", "seed-0 AUPRC; the three-seed mean is 0.6410"),
     ("0.7009 for the strongest", "seed-0 value; three-seed mean is 0.6993"),
     ("inter-path disagreement", "never implemented in the form claimed"),
+    ("the one measurement VeritasXR wins",
+     "calibration was seed-0; three-seed mean ranks it second"),
+    ("best model in the study by a factor of 3.6", "seed-0 calibration artifact"),
+    ("12x lower than resnet50", "seed-0 calibration artifact"),
+    ("3.6x lower than the next best", "seed-0 calibration artifact"),
+    ("0.0059", "seed-0 ECE; the three-seed mean is 0.0440"),
+    ("claims 78.55%", "seed-0 calibration artifact"),
 ]
 # Scan the README *and* the site. A scan that covered only the README passed
 # while the demo page's h1 still announced a retracted claim as its headline.
@@ -105,10 +154,29 @@ site_stale = stale + [
     ("disagreement as uncertainty", "rejected; AUROC 0.5046 against error"),
     ("their disagreement is the uncertainty", "rejected"),
 ]
+# A retraction has to be allowed to name the number it is retracting. Lines
+# that do so are marked, and only those lines are exempt -- the phrase is still
+# a failure anywhere else, including elsewhere in the same file.
+RETRACTION = ("previously reported", "was one seed", "seed 0 was its best",
+              "across the three seeds", "across three seeds its ece",
+              "read as a 12", "retracted", "seed-0 artifact", "no longer")
+
+
+def exempt(line):
+    return any(m in line.lower() for m in RETRACTION)
+
+
 for where, text in targets.items():
+    lines = text.splitlines()
     for phrase, why in site_stale:
-        if phrase.lower() in text.lower():
-            problems.append(f"STALE CLAIM in {where}: '{phrase}' ({why})")
+        # The exemption covers the sentence, not the line: prose wraps, so a
+        # retracted number often lands a line below the words retracting it.
+        hits = [ln for i, ln in enumerate(lines)
+                if phrase.lower() in ln.lower()
+                and not any(exempt(x) for x in lines[max(0, i - 2):i + 2])]
+        if hits:
+            problems.append(f"STALE CLAIM in {where}: '{phrase}' ({why})"
+                            f"\n      {hits[0].strip()[:100]}")
 
 print(f"  checked {checked} README values against the data files")
 print(f"  problems: {len(problems)}")

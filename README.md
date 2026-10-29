@@ -16,8 +16,11 @@ against the model's own errors it scores AUROC 0.5046, which is chance. The
 model reports predictive entropy instead, and the negative result is kept
 rather than quietly dropped — along with two others, since neither the
 per-input merge gate nor squeeze-excitation survives a multi-seed ablation.
-What does survive is calibration, where VeritasXR is the best model in the
-study by a factor of 3.6.
+Calibration looked like the one win until it was replicated: on three seeds
+VeritasXR is second, not first, and a single temperature fitted on validation
+puts it last. **It wins no metric here.** What the study produces instead is a
+measured account of why, and four separate cases of a single seed reporting a
+result that reverses on replication.
 
 **Not a medical device.** This is a research artifact. It is not validated for
 clinical use and must not inform any diagnosis or treatment decision.
@@ -232,36 +235,73 @@ having tested the design.
 AUPRC only grades ranking. A model can order cases perfectly while being
 systematically overconfident, and that matters here: the triage bands are read
 off the predicted distribution, so inflated probabilities produce inflated
-bands. Measured on the test set with 15 bins.
+bands. Measured on the test set with 15 bins, **averaged over three seeds**.
 
 | Model | ECE | MCE | Brier | Mean confidence | Accuracy | Gap |
 |---|---|---|---|---|---|---|
-| **VeritasXR** | **0.0059** | **0.0084** | 0.1460 | 0.7855 | 0.7818 | **+0.0037** |
-| EfficientNet-B0 | 0.0210 | 0.0426 | 0.1667 | 0.7705 | 0.7519 | +0.0186 |
-| ResNet50 | 0.0711 | 0.1601 | **0.1347** | 0.8774 | 0.8063 | +0.0711 |
-| DenseNet121 | 0.0746 | 0.1742 | 0.1511 | 0.8504 | 0.7803 | +0.0701 |
-| HOG + SVM | 0.2704 | 0.7390 | 0.2702 | 0.9996 | 0.7294 | +0.2702 |
+| EfficientNet-B0 | 0.0343 ± 0.0138 | 0.0807 | 0.1541 | 0.8046 | 0.7711 | +0.0335 |
+| **VeritasXR** | 0.0440 ± 0.0295 | 0.0947 | 0.1519 | 0.8132 | 0.7699 | +0.0433 |
+| ResNet50 | 0.0599 ± 0.0086 | 0.1210 | 0.1374 | 0.8636 | 0.8040 | +0.0596 |
+| DenseNet121 | 0.0670 ± 0.0100 | 0.1397 | 0.1567 | 0.8316 | 0.7670 | +0.0646 |
+| HOG + linear SVM | 0.2715 ± 0.0014 | 0.7736 | 0.2713 | 0.9996 | 0.7283 | +0.2713 |
 
 ![Reliability diagram](docs/assets/img/calibration.png)
 
-**This is the one measurement VeritasXR wins, and it is not a trivial one.**
-Its expected calibration error is 3.6x lower than the next best model and 12x
-lower than ResNet50. It claims 78.55% confidence and delivers 78.18% accuracy,
-a gap of 0.0037. For a model whose stated purpose is uncertainty-aware triage,
-being believable about its own confidence is the property that matters, and it
-is the one the pretrained baselines are worst at. The plausible reason is that
-it is trained from scratch: the pretrained models carry an ImageNet prior that
-pushes them toward overconfidence on a smaller, harder dataset.
+**This section previously reported a 12x calibration win for VeritasXR. That
+was one seed.** The table above was built from seed 0 alone, and seed 0 is
+VeritasXR's best draw by a wide margin: its ECE across the three seeds is
+0.0059, 0.0482, 0.0778. Averaged properly it is second, not
+first, and its margin over the worst deep model is 1.5x rather than 12x. Its
+seed spread (± 0.0295) is also the largest of the four,
+so it is the least predictable of them on the metric it was supposed to own.
+This is the fourth time in this study that a single seed produced a result that
+reversed on replication, which is the finding worth carrying out of it.
 
-Two caveats, because picking the metric that flatters a result is the easiest
-mistake available here:
+**EfficientNet-B0 is the best-calibrated model as well as the most accurate**,
+at 0.0343. Every model is overconfident — the gap
+column is positive for all five — which is the expected direction when a
+probability is read as a probability.
 
-- **ResNet50 has the best Brier score** (0.1347) despite the second-worst ECE.
-  Brier combines calibration with refinement, and ResNet50's higher accuracy
-  offsets its overconfidence. Different metrics favour different models.
+### The objection: calibration is cheap to buy
+
+Calibration is a property you can add after training. One temperature fitted on
+the validation split, applied to the test logits, leaves the ranking exactly
+unchanged — AUPRC and AUROC are invariant under it, which the script asserts —
+and moves an overconfident model onto the diagonal. If the baselines close the
+gap for the price of one scalar, then "best calibrated" describes VeritasXR's
+default output scale rather than anything the architecture does.
+
+They do, and then some:
+
+| Model | Fitted T | ECE before | ECE after | Brier before | Brier after |
+|---|---|---|---|---|---|
+| ResNet50 | 1.521 | 0.0599 | 0.0145 | 0.1374 | 0.1325 |
+| EfficientNet-B0 | 1.216 | 0.0343 | 0.0151 | 0.1541 | 0.1526 |
+| **VeritasXR** | 1.229 | 0.0440 | 0.0219 | 0.1519 | 0.1489 |
+| DenseNet121 | 1.448 | 0.0670 | 0.0248 | 0.1567 | 0.1513 |
+
+**After temperature scaling VeritasXR is last of the four.** ResNet50 goes from
+worst deep model to best, because its miscalibration is almost entirely a scale
+error — T = 1.52 corrects nearly all of it. VeritasXR's fitted temperature is
+closest to 1 on seed 0 (0.974, i.e. essentially already calibrated), but across
+seeds it needs 1.229 and what remains after scaling is not a scale error, so
+scaling cannot remove it.
+
+The honest summary is therefore: **VeritasXR wins no metric in this study.** It
+is competitive on calibration out of the box and that is worth stating, but the
+advantage is seed-dependent, smaller than one seed suggested, and erased by a
+one-parameter post-hoc fit that any of these models can have for free.
+
+Two caveats that still hold:
+
+- **ResNet50 has the best Brier score** (0.1374) despite a
+  worse ECE. Brier combines calibration with refinement, and ResNet50's higher
+  accuracy offsets its overconfidence. Different metrics favour different models.
 - **HOG + SVM's 0.9996 mean confidence is an artifact, not a property of the
   classifier.** Its scores are a logistic squash of an unbounded SVM margin,
   which saturates. Its calibration figure describes that mapping, not the model.
+  It is excluded from the temperature table for the same reason: fitting a
+  temperature there fits the squash.
 
 ## Localisation — where is each model looking?
 

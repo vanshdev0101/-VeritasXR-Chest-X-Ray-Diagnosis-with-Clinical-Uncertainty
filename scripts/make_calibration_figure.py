@@ -1,5 +1,10 @@
 """Reliability diagram: confidence against observed accuracy.
 
+Three seeds per model. The curve is occupancy-weighted across them and the
+bar chart carries min-max whiskers, because this study published a single-seed
+calibration table once and it overstated the custom model's advantage by an
+order of magnitude.
+
 A perfectly calibrated model sits on the diagonal. Above it the model is
 underconfident, below it overconfident -- which is the usual direction and the
 one that matters when the number is read as a probability.
@@ -42,7 +47,8 @@ def main():
             continue
         xs, ys = zip(*pts)
         ax.plot(xs, ys, ls=ls, marker=mk, ms=5, lw=1.8, color=col,
-                label=f"{LABEL.get(k, k)}  (ECE {v['ece']:.3f})", zorder=2)
+                label=f"{LABEL.get(k, k)}  (ECE {v['ece']:.3f}"
+                      f" \u00b1 {v.get('ece_std', 0):.3f})", zorder=2)
 
     ax.set_xlabel("predicted confidence"); ax.set_ylabel("observed accuracy")
     ax.set_title("Reliability diagram", fontsize=11)
@@ -54,15 +60,22 @@ def main():
 
     names = sorted(d, key=lambda k: d[k]["ece"])
     y = np.arange(len(names))
+    # Whiskers span the seeds. Without them this bar chart read as a 12x win
+    # for the model whose best seed it happened to be plotting.
+    lo = [d[k]["ece"] - min(d[k].get("ece_per_seed", [d[k]["ece"]])) for k in names]
+    hi = [max(d[k].get("ece_per_seed", [d[k]["ece"]])) - d[k]["ece"] for k in names]
     bx.barh(y, [d[k]["ece"] for k in names],
+            xerr=[lo, hi], error_kw={"ecolor": "#334155", "lw": 1, "capsize": 3},
             color=[STYLE.get(k, ("#333",))[0] for k in names], height=.6)
     bx.set_yticks(y); bx.set_yticklabels([LABEL.get(k, k) for k in names], fontsize=9)
     bx.invert_yaxis()
-    bx.set_xlabel("expected calibration error (lower is better)")
+    bx.set_xlabel("expected calibration error, mean of 3 seeds (lower is better)")
     bx.set_title("Calibration error", fontsize=11)
     for i, k in enumerate(names):
-        bx.text(d[k]["ece"] + .004, i, f"{d[k]['ece']:.4f}", va="center", fontsize=8)
-    bx.set_xlim(0, max(d[k]["ece"] for k in names) * 1.25)
+        bx.text(max(d[k].get("ece_per_seed", [d[k]["ece"]])) + .006, i,
+                f"{d[k]['ece']:.4f}", va="center", fontsize=8)
+    bx.set_xlim(0, max(max(d[k].get("ece_per_seed", [d[k]["ece"]]))
+                       for k in names) * 1.25)
     bx.grid(axis="x", alpha=.25)
 
     fig.tight_layout()

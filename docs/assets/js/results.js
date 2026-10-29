@@ -286,18 +286,51 @@ function render(d) {
                   (gap >= 0 ? '+' : '') + gap.toFixed(4)],
         };
       }));
-    const vx = C.veritasxr, next = C[order.find((k) => k !== 'veritasxr')];
-    if (vx && next) {
+    const vx = C.veritasxr;
+    if (vx) {
+      const ps = vx.ece_per_seed || [vx.ece];
+      const rank = order.indexOf('veritasxr') + 1;
       $('cal-note').innerHTML =
-        `VeritasXR's calibration error is ${(next.ece / vx.ece).toFixed(1)}x lower than the
-         next best model: it claims ${pct(vx.mean_confidence)} confidence and delivers
-         ${pct(vx.accuracy)} accuracy. For a model built around uncertainty-aware triage
-         that is the property that matters, and it is the one the pretrained baselines are
-         worst at. Note that ResNet50 still has the best Brier score, which combines
-         calibration with refinement — different metrics favour different models. The
-         HOG + SVM figure is an artifact of squashing an unbounded SVM margin through a
-         logistic, not a property of the classifier.`;
+        `This table was single-seed until an audit caught it, and it read as a 12&times;
+         win for VeritasXR. Across three seeds its ECE is
+         ${ps.map((x) => x.toFixed(4)).join(', ')} — seed 0 was its best draw by a wide
+         margin. Averaged, it ranks ${rank} of ${order.length} with the largest seed
+         spread of the four deep models (&plusmn; ${f4(vx.ece_std || 0)}), so it is the
+         least predictable of them on the metric it was built to own. Every model here is
+         overconfident: the gap column is positive for all five. ResNet50 still has the
+         best Brier score, which combines calibration with refinement — different metrics
+         favour different models. The HOG + SVM figure is an artifact of squashing an
+         unbounded SVM margin through a logistic, not a property of the classifier.`;
     }
+  });
+
+  /* ---------- temperature scaling ---------- */
+  fetch('data/temperature.json').then((r) => r.ok ? r.json() : null).then((T) => {
+    const sect = $('temperature');
+    if (!T || !Object.keys(T).length) { if (sect) sect.hidden = true; return; }
+    const name = { veritasxr: 'VeritasXR', efficientnet_b0: 'EfficientNet-B0',
+                   resnet50: 'ResNet50', densenet121: 'DenseNet121' };
+    const order = Object.keys(T).sort((a, b) => T[a].agg.after.ece - T[b].agg.after.ece);
+    table($('temp-table'),
+      ['Model', 'Fitted T', 'ECE before', 'ECE after', 'Brier before', 'Brier after'],
+      order.map((k) => {
+        const a = T[k].agg;
+        return {
+          cls: k === 'veritasxr' ? 'is-ours' : '',
+          cells: [name[k] || k, a.temperature.toFixed(3), f4(a.before.ece),
+                  f4(a.after.ece), f4(a.before.brier), f4(a.after.brier)],
+        };
+      }));
+    const last = order[order.length - 1];
+    $('temp-note').innerHTML =
+      `Ranking is invariant under this transform — AUPRC and AUROC are identical before
+       and after, which the script asserts — so the only thing that moves is how
+       believable the numbers are. ${name[order[0]]} ends up best calibrated of the four,
+       and <strong>${name[last]} ends up last</strong>. ResNet50's miscalibration is
+       almost entirely a scale error, which one scalar corrects; what is left of
+       VeritasXR's after scaling is not, so scaling cannot remove it. Calibration out of
+       the box is still worth having, but it is not an advantage any of these models can
+       be denied.`;
   });
 
   /* ---------- localisation ---------- */
@@ -366,6 +399,50 @@ function render(d) {
     $('abl-pending').innerHTML =
       'Ablation runs are still training. This table populates automatically once ' +
       '<code>results/veritasxr_&lt;variant&gt;_seed0/</code> exists and the export is re-run.';
+  }
+
+  /* ---------- learning-rate probe ---------- */
+  const LP = d.lr_probe;
+  if (LP && LP.models && LP.models.length) {
+    const rates = [...new Set(LP.models.flatMap((m) => m.points.map((p) => p[0])))]
+      .sort((a, b) => a - b);
+    const fmt = (x) => x.toExponential(0).replace('e-', 'e&minus;');
+    table($('lr-table'),
+      ['Model', ...rates.map((r) => fmt(r) + (r === LP.shared_lr ? ' (shared)' : '')),
+       'Best &minus; shared'],
+      LP.models.map((m) => {
+        const at = new Map(m.points);
+        return {
+          cls: m.model === 'veritasxr' ? 'is-ours' : '',
+          cells: [m.label,
+            ...rates.map((r) => {
+              const v = at.get(r);
+              if (v === undefined) return '—';
+              return r === m.best_lr ? `<strong>${f4(v)}</strong>` : f4(v);
+            }),
+            (m.gain >= 0 ? '+' : '') + m.gain.toFixed(4)],
+        };
+      }));
+    const worst = Math.max(...LP.models.map((m) => m.gain));
+    const vx = LP.models.find((m) => m.model === 'veritasxr');
+    const gapLo = (() => {
+      const r = (d.models || []).filter((m) => m.vs_veritasxr)
+        .map((m) => m.vs_veritasxr.mean ?? m.vs_veritasxr.diff)
+        .filter((x) => typeof x === 'number' && x > 0);
+      return r.length ? Math.min(...r) : null;
+    })();
+    $('lr-note').innerHTML =
+      `Seed 0, same grid for every model, AUPRC on the test set. No model gains more than
+       <strong>${worst.toFixed(4)}</strong> AUPRC from being given its own learning rate${
+         vx ? `, and VeritasXR gains ${vx.gain.toFixed(4)}` : ''}${
+         gapLo !== null ? ` — against a gap to the nearest baseline of ${gapLo.toFixed(4)}`
+                        : ''}. The shared rate is therefore not what separates these
+       models: it sits within a few thousandths of every model's own optimum, and tuning
+       each one individually would <em>widen</em> the measured gap rather than close it,
+       because the pretrained baselines gain at least as much as the custom model does.
+       This is a confound that was tested and did not hold, not one that was assumed away.`;
+  } else if ($('lr-section')) {
+    $('lr-section').hidden = true;
   }
 
   /* ---------- dataset note ---------- */

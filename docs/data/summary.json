@@ -23236,6 +23236,68 @@
    ]
   }
  ],
+ "lr_probe": {
+  "shared_lr": 0.0003,
+  "seed": 0,
+  "models": [
+   {
+    "model": "resnet50",
+    "label": "ResNet50",
+    "points": [
+     [
+      0.0001,
+      0.688
+     ],
+     [
+      0.0003,
+      0.6849
+     ]
+    ],
+    "best_lr": 0.0001,
+    "gain": 0.0031
+   },
+   {
+    "model": "veritasxr",
+    "label": "VeritasXR",
+    "points": [
+     [
+      0.0001,
+      0.6316
+     ],
+     [
+      0.0003,
+      0.6426
+     ],
+     [
+      0.001,
+      0.6445
+     ]
+    ],
+    "best_lr": 0.001,
+    "gain": 0.0019
+   },
+   {
+    "model": "efficientnet_b0",
+    "label": "EfficientNet-B0",
+    "points": [
+     [
+      0.0001,
+      0.6954
+     ],
+     [
+      0.0003,
+      0.7009
+     ],
+     [
+      0.001,
+      0.7025
+     ]
+    ],
+    "best_lr": 0.001,
+    "gain": 0.0016
+   }
+  ]
+ },
  "pending": [
   "significance",
   "localisation"

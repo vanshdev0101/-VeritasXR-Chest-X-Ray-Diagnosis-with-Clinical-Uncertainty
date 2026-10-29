@@ -83,11 +83,24 @@ def main():
         has_sd = "seed_std" in v.get("local_point", {})
         print(f"  localisation.json: multi-seed = {has_sd}, "
               f"seeds = {v.get('seeds', 'n/a')}")
-    p = Path("docs/data/calibration.json")
-    if p.is_file():
+    # Every published file that aggregates over runs must say how many runs,
+    # and must not be one. A single-seed calibration table shipped here once
+    # and overstated the custom model's advantage by an order of magnitude.
+    for name, seeds_of in (("calibration.json", lambda v: len(v.get("seeds", []))),
+                           ("temperature.json", lambda v: v.get("seeds", 0))):
+        p = Path("docs/data") / name
+        if not p.is_file():
+            print(f"  {name}: not generated")
+            continue
         d = json.loads(p.read_text())
-        print(f"  calibration.json: {len(d)} models, "
-              f"best ECE = {min(v['ece'] for v in d.values()):.4f}")
+        counts = {k: seeds_of(v) for k, v in d.items()}
+        bad = [k for k, n in counts.items() if n < 3]
+        best = min(d, key=lambda k: d[k].get("ece", d[k].get("agg", {})
+                                             .get("after", {}).get("ece", 9)))
+        print(f"  {name}: {len(d)} models, seeds {sorted(set(counts.values()))},"
+              f" best = {best}")
+        if bad:
+            print(f"    !! single-seed or incomplete entries: {bad}")
 
 
 if __name__ == "__main__":
