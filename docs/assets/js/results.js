@@ -124,6 +124,24 @@ function render(d) {
     })),
     `Test set: ${d.dataset.split.test.toLocaleString()} images, ${pct(prev)} positive.`);
 
+  /* ---------- paired significance ---------- */
+  const sig = models.filter((m) => m.vs_veritasxr);
+  table($('sig-table'),
+    ['Comparison', 'Δ AUPRC', '95% CI', 'p', 'Verdict'],
+    sig.map((m) => {
+      const v = m.vs_veritasxr;
+      const sign = v.diff >= 0 ? '+' : '';
+      return [
+        `${m.label} − VeritasXR`,
+        `${sign}${v.diff.toFixed(4)}`,
+        `<span class="ci">[${v.ci[0]}, ${v.ci[1]}]</span>`,
+        v.p < 0.0005 ? '&lt; 0.001' : v.p.toFixed(3),
+        v.separated
+          ? `<span class="badge">separated</span>`
+          : `<span class="badge badge-pending">not separated</span>`,
+      ];
+    }));
+
   /* ---------- PR ---------- */
   new Chart($('pr-chart'), {
     type: 'line',

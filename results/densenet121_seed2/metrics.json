@@ -1,0 +1,176 @@
+{
+  "model": "densenet121",
+  "run": "densenet121",
+  "ablation": null,
+  "seed": 2,
+  "kind": "deep",
+  "params_total": 6955906,
+  "params_trainable": 6955906,
+  "aux_heads_supervised": false,
+  "aux_loss_weight": 0.3,
+  "lr": 0.0003,
+  "epochs_run": 12,
+  "best_epoch": 7,
+  "best_val_auprc": 0.7036050522671454,
+  "train_seconds": 3435.7,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.4913556975524994,
+      "lr": 0.0003,
+      "val_auprc": 0.645807861907835,
+      "val_auroc": 0.8673717374959723,
+      "val_f1": 0.6088646967340591
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.46038280442791574,
+      "lr": 0.00029917828430524096,
+      "val_auprc": 0.6718776245638829,
+      "val_auroc": 0.8748505245068203,
+      "val_f1": 0.6187525815778604
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.4493193443398124,
+      "lr": 0.0002967221401100708,
+      "val_auprc": 0.6809481243570615,
+      "val_auroc": 0.8782265225018796,
+      "val_f1": 0.6302083333333334
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.4437217199424119,
+      "lr": 0.00029265847744427303,
+      "val_auprc": 0.6863109517771192,
+      "val_auroc": 0.8802509756184884,
+      "val_f1": 0.6261165461505742
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.432788672951237,
+      "lr": 0.0002870318186463901,
+      "val_auprc": 0.691075110325769,
+      "val_auroc": 0.8821307865812179,
+      "val_f1": 0.6527315914489311
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.420054106652021,
+      "lr": 0.0002799038105676658,
+      "val_auprc": 0.6897489970172219,
+      "val_auroc": 0.8787308009022234,
+      "val_f1": 0.6247892074198989
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.41311814087741777,
+      "lr": 0.0002713525491562421,
+      "val_auprc": 0.7036050522671454,
+      "val_auroc": 0.8846008019762988,
+      "val_f1": 0.6376569037656904
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.4000273208113109,
+      "lr": 0.00026147172382160914,
+      "val_auprc": 0.6898854187004528,
+      "val_auroc": 0.8825786760230567,
+      "val_f1": 0.6533902323376007
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.38493943912189577,
+      "lr": 0.00025036959095382875,
+      "val_auprc": 0.6957583945784351,
+      "val_auroc": 0.8850248827467688,
+      "val_f1": 0.6458149779735682
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.367252250606159,
+      "lr": 0.000238167787843871,
+      "val_auprc": 0.6880294361517605,
+      "val_auroc": 0.883914646808206,
+      "val_f1": 0.6259541984732825
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.3529450835765533,
+      "lr": 0.00022500000000000002,
+      "val_auprc": 0.6899224482829565,
+      "val_auroc": 0.8773140954495005,
+      "val_f1": 0.633130081300813
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.32986625951058257,
+      "lr": 0.0002110104964613701,
+      "val_auprc": 0.6823064821031961,
+      "val_auroc": 0.8798798825677564,
+      "val_f1": 0.6435786435786436
+    }
+  ],
+  "test": {
+    "auroc": 0.8738555086725275,
+    "auprc": 0.6897100770692803,
+    "f1": 0.6186085498742665,
+    "balanced_accuracy": 0.7885927561260511,
+    "sensitivity": 0.8172757475083057,
+    "specificity": 0.7599097647437963,
+    "accuracy": 0.7728407388916625,
+    "threshold": 0.5,
+    "confusion": {
+      "tn": 2358,
+      "fp": 745,
+      "fn": 165,
+      "tp": 738
+    },
+    "n": 4006,
+    "positives": 903
+  },
+  "device": "NVIDIA GeForce RTX 3070 Ti Laptop GPU",
+  "torch": "2.14.1+cu130",
+  "config": {
+    "data": {
+      "root": "data/processed",
+      "train": "train.csv",
+      "val": "val.csv",
+      "test": "test.csv",
+      "image_size": 224
+    },
+    "train": {
+      "max_epochs": 30,
+      "batch_size": 32,
+      "optimizer": "adamw",
+      "lr": 0.0003,
+      "weight_decay": 0.0001,
+      "scheduler": "cosine",
+      "warmup_epochs": 1,
+      "amp_dtype": "bfloat16",
+      "num_workers": 8,
+      "early_stop_patience": 5,
+      "select_metric": "val_auprc",
+      "class_weighting": "balanced",
+      "aux_loss_weight": 0.3
+    },
+    "augment": {
+      "crop_scale": [
+        0.85,
+        1.0
+      ],
+      "crop_ratio": [
+        0.95,
+        1.05
+      ],
+      "rotation_degrees": 10,
+      "brightness": 0.1,
+      "contrast": 0.1
+    }
+  },
+  "per_model": {
+    "in_channels": 3,
+    "normalize": "imagenet",
+    "pretrained": true
+  }
+}

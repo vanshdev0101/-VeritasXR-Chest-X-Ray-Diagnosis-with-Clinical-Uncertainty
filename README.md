@@ -15,34 +15,87 @@ clinical use and must not inform any diagnosis or treatment decision.
 
 ## Results
 
-Test set: 4,006 radiographs, 22.5% positive. Bootstrap 95% confidence intervals
-over 2,000 resamples.
+Test set: 4,006 radiographs, 22.5% positive. Three seeds per model, reported as
+mean ± standard deviation.
 
-| Model | Params | AUPRC | 95% CI | AUROC | F1 | Bal. acc |
-|---|---|---|---|---|---|---|
-| EfficientNet-B0 | 4.01M | 0.7009 | [0.6699, 0.7288] | 0.8766 | 0.6065 | 0.7860 |
-| ResNet50 | 23.51M | 0.6849 | [0.6536, 0.7140] | 0.8718 | 0.6312 | 0.7811 |
-| DenseNet121 | 6.96M | 0.6824 | [0.6529, 0.7120] | 0.8706 | 0.6287 | 0.7962 |
-| **VeritasXR** | **4.22M** | 0.6426 | [0.6111, 0.6742] | 0.8492 | 0.6020 | 0.7642 |
-| HOG + linear SVM | 6,085 feat | 0.3834 | [0.3585, 0.4059] | 0.7297 | 0.5434 | 0.7240 |
+| Model | Params | AUPRC | AUROC | F1 | Bal. acc |
+|---|---|---|---|---|---|
+| EfficientNet-B0 | 4.01M | **0.6993 ± 0.0033** | 0.8781 ± 0.0026 | 0.6182 | 0.7880 |
+| DenseNet121 | 6.96M | 0.6872 ± 0.0034 | 0.8728 ± 0.0016 | 0.6166 | 0.7893 |
+| ResNet50 | 23.51M | 0.6747 ± 0.0072 | 0.8675 ± 0.0032 | 0.6267 | 0.7772 |
+| **VeritasXR** | **4.22M** | 0.6410 ± 0.0039 | 0.8531 ± 0.0028 | 0.5988 | 0.7670 |
+| HOG + linear SVM | 6,085 feat | 0.3823 ± 0.0010 | 0.7283 ± 0.0009 | 0.5398 | 0.7207 |
 
-Three readings worth stating plainly:
+Differences are tested by paired bootstrap over 2,000 resamples: both models
+are scored on the *same* resampled test cases, so the shared difficulty of
+those cases cancels.
 
-- **VeritasXR's interval overlaps all three pretrained baselines.** On a single
-  seed it is not statistically distinguishable from models initialised on
-  ImageNet, despite training from random initialisation on 18,677 images. Only
-  the classical control separates cleanly.
+| Comparison | Δ AUPRC | 95% CI | p |
+|---|---|---|---|
+| EfficientNet-B0 − VeritasXR | +0.0581 | [+0.0402, +0.0762] | < 0.0001 |
+| ResNet50 − VeritasXR | +0.0422 | [+0.0230, +0.0621] | < 0.0001 |
+| DenseNet121 − VeritasXR | +0.0397 | [+0.0215, +0.0588] | < 0.0001 |
+| HOG + SVM − VeritasXR | −0.2593 | [−0.2857, −0.2330] | < 0.0001 |
+
+Four readings:
+
+- **Every pretrained baseline beats VeritasXR, significantly.** The gap is
+  0.040–0.058 AUPRC and the paired intervals exclude zero. ImageNet
+  initialisation is worth roughly 6–9% relative AUPRC on this task, and
+  training from scratch on 18,677 images does not close it.
 - **Capacity is not the limiting factor.** ResNet50 carries 5.6x the parameters
-  of EfficientNet-B0 and does not outperform it. On a dataset this size, more
-  model buys nothing.
-- **Deep learning earns its place, measurably.** The HOG + SVM control sits
-  0.26 AUPRC below the deep models, which is what makes that gap a result
-  rather than an assumption.
+  of EfficientNet-B0, finishes third, and has the highest seed-to-seed variance
+  of any model (±0.0072). On a dataset this size more model buys instability,
+  not accuracy.
+- **Deep learning earns its place, measurably.** The classical control sits
+  0.259 AUPRC below the custom model, with the paired interval far from zero.
+  That gap is a result rather than an assumption.
+- **The cheap pathway does most of the work.** In the ablation, the 3x3 branch
+  alone (1.01M parameters) outperforms the 7x7 branch alone (3.30M), and comes
+  within 0.0126 of the full model using 24% of its parameters.
+
+A note on method, because the two analyses disagree: the marginal 95% intervals
+for VeritasXR and the pretrained models overlap, which invites the conclusion
+that the difference is unresolved. That inference is wrong. Overlapping
+marginal intervals do not imply the absence of a significant difference; the
+paired test above is the correct comparison and it separates every pair at
+p < 0.0001.
 
 **Accuracy is deliberately absent from the headline.** At 22.5% prevalence a
 model that always predicts negative scores 77.5% accuracy while detecting
 nothing. Accuracy is recorded in the run artifacts for completeness and is never
 used to select a checkpoint; AUPRC is.
+
+## Ablation
+
+Each variant removes or replaces one component of the custom model. Single
+seed, so deltas are read against VeritasXR's own seed-to-seed standard
+deviation of ±0.0039.
+
+| Variant | Params | AUPRC | Δ vs full | Reading |
+|---|---|---|---|---|
+| `full` | 4,215,352 | 0.6426 | — | — |
+| `scalar_merge` | 4,166,008 | 0.6399 | −0.0027 | within noise |
+| `fixed_merge` | 4,166,006 | 0.6392 | −0.0034 | within noise |
+| `concat_merge` | 4,264,310 | 0.6341 | −0.0085 | ~2 std |
+| `no_se` | 4,177,672 | 0.6335 | −0.0091 | ~2 std |
+| `local_only` | **1,008,348** | 0.6300 | −0.0126 | ~3 std |
+| `global_only` | 3,302,108 | 0.6233 | −0.0193 | ~5 std |
+
+Two findings and one negative result:
+
+- **The 3x3 pathway outperforms the 7x7 pathway at a third of the cost.**
+  `local_only` beats `global_only` by 0.0067 while using 1.01M parameters
+  against 3.30M. The expensive branch is not carrying its weight.
+- **76% of the model can go for ~2% relative AUPRC.** `local_only` is 0.0126
+  below `full` at 24% of the parameters.
+- **The per-input merge gate is not doing measurable work.** Gate, dataset-wide
+  scalar and fixed 50/50 span 0.0034, which is smaller than the model's own
+  seed-to-seed deviation. On this task the gate is indistinguishable from
+  averaging the two pathways.
+
+Deltas below roughly two standard deviations should not be treated as
+conclusions until the variants are re-run across seeds.
 
 ## Architecture
 
@@ -211,21 +264,6 @@ python scripts/export_web_data.py
 Results land in `results/<model>_seed<seed>/` as `metrics.json`,
 `progress.csv` and `test_scores.npz`. Per-sample test scores are saved so that
 bootstrap intervals and significance tests can be run without retraining.
-
-## Ablation
-
-The constructor flags are the ablation. `python train.py --model veritasxr
---ablation all` sweeps every variant:
-
-| Variant | Tests |
-|---|---|
-| `full` | — |
-| `no_se` | Does squeeze-excitation earn its parameters? |
-| `local_only` | Is the 3x3 branch sufficient alone? (1.01M params) |
-| `global_only` | Is the 7x7 branch sufficient alone? (3.30M params) |
-| `fixed_merge` | Does the merge weight do anything at all? |
-| `scalar_merge` | Is a dataset-wide weight as good as a per-input gate? |
-| `concat_merge` | Does summing the pathways lose information against concatenating? |
 
 ## Limitations
 

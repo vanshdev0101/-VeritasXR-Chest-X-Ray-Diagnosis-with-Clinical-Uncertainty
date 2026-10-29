@@ -61,12 +61,28 @@
 
   <section>
     <h2>Model comparison</h2>
-    <p class="lede">Bootstrap 95% confidence intervals over 2,000 resamples of
-      the test set. Overlapping intervals mean the difference is not resolved by
-      this data.</p>
+    <p class="lede">Three seeds per model, reported as mean ± standard
+      deviation, with bootstrap 95% confidence intervals over 2,000 resamples of
+      the test set.</p>
     <div class="card">
       <div class="table-scroll"><table id="main-table">
         <caption>Test-set performance. Sorted by AUPRC. VeritasXR highlighted.</caption>
+      </table></div>
+    </div>
+  </section>
+
+  <section id="significance">
+    <h2>Is the difference real?</h2>
+    <p class="lede">
+      Each model is compared against VeritasXR by paired bootstrap: both are
+      scored on the <em>same</em> resampled test cases, so the shared difficulty
+      of those cases cancels. This is the correct comparison — two marginal
+      intervals can overlap while the paired difference is clearly non-zero, so
+      reading overlap as "no difference" is a mistake.
+    </p>
+    <div class="card">
+      <div class="table-scroll"><table id="sig-table">
+        <caption>Paired difference in AUPRC against VeritasXR, 2,000 resamples.</caption>
       </table></div>
     </div>
   </section>

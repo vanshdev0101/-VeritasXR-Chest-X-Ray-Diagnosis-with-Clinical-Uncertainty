@@ -1,0 +1,160 @@
+{
+  "model": "efficientnet_b0",
+  "run": "efficientnet_b0",
+  "ablation": null,
+  "seed": 2,
+  "kind": "deep",
+  "params_total": 4010110,
+  "params_trainable": 4010110,
+  "aux_heads_supervised": false,
+  "aux_loss_weight": 0.3,
+  "lr": 0.0003,
+  "epochs_run": 10,
+  "best_epoch": 5,
+  "best_val_auprc": 0.7075785270800247,
+  "train_seconds": 1763.1,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.4840863803545361,
+      "lr": 0.0003,
+      "val_auprc": 0.6854010961466472,
+      "val_auroc": 0.8766956070316136,
+      "val_f1": 0.6292601828761429
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.4404630536025016,
+      "lr": 0.00029917828430524096,
+      "val_auprc": 0.7005360686389048,
+      "val_auroc": 0.8836899860370198,
+      "val_f1": 0.6438296003513395
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.4248131384520343,
+      "lr": 0.0002967221401100708,
+      "val_auprc": 0.6914460610276205,
+      "val_auroc": 0.8780603988399984,
+      "val_f1": 0.6422535211267606
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.4081910260238942,
+      "lr": 0.00029265847744427303,
+      "val_auprc": 0.6964640329445456,
+      "val_auroc": 0.8844160610074826,
+      "val_f1": 0.6440988106129918
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.3927116467398599,
+      "lr": 0.0002870318186463901,
+      "val_auprc": 0.7075785270800247,
+      "val_auroc": 0.8857173033546955,
+      "val_f1": 0.6493023255813953
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.38129897906379473,
+      "lr": 0.0002799038105676658,
+      "val_auprc": 0.6992713271578977,
+      "val_auroc": 0.8837630231642262,
+      "val_f1": 0.6338273757628596
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.35297910764327795,
+      "lr": 0.0002713525491562421,
+      "val_auprc": 0.6986342916638303,
+      "val_auroc": 0.8832891769002184,
+      "val_f1": 0.6378938282261545
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.3374720443532152,
+      "lr": 0.00026147172382160914,
+      "val_auprc": 0.6883658834382634,
+      "val_auroc": 0.8783342880670223,
+      "val_f1": 0.6404644930772666
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.31268988101140915,
+      "lr": 0.00025036959095382875,
+      "val_auprc": 0.6776749872894244,
+      "val_auroc": 0.8740021839533136,
+      "val_f1": 0.6345067362016514
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.28263808518494793,
+      "lr": 0.000238167787843871,
+      "val_auprc": 0.6768777656124881,
+      "val_auroc": 0.8752846299810246,
+      "val_f1": 0.6227795193312434
+    }
+  ],
+  "test": {
+    "auroc": 0.8759147454558498,
+    "auprc": 0.6947008864591113,
+    "f1": 0.635593220338983,
+    "balanced_accuracy": 0.7857747780253382,
+    "sensitivity": 0.7475083056478405,
+    "specificity": 0.8240412504028359,
+    "accuracy": 0.8067898152770844,
+    "threshold": 0.5,
+    "confusion": {
+      "tn": 2557,
+      "fp": 546,
+      "fn": 228,
+      "tp": 675
+    },
+    "n": 4006,
+    "positives": 903
+  },
+  "device": "NVIDIA GeForce RTX 3070 Ti Laptop GPU",
+  "torch": "2.14.1+cu130",
+  "config": {
+    "data": {
+      "root": "data/processed",
+      "train": "train.csv",
+      "val": "val.csv",
+      "test": "test.csv",
+      "image_size": 224
+    },
+    "train": {
+      "max_epochs": 30,
+      "batch_size": 32,
+      "optimizer": "adamw",
+      "lr": 0.0003,
+      "weight_decay": 0.0001,
+      "scheduler": "cosine",
+      "warmup_epochs": 1,
+      "amp_dtype": "bfloat16",
+      "num_workers": 8,
+      "early_stop_patience": 5,
+      "select_metric": "val_auprc",
+      "class_weighting": "balanced",
+      "aux_loss_weight": 0.3
+    },
+    "augment": {
+      "crop_scale": [
+        0.85,
+        1.0
+      ],
+      "crop_ratio": [
+        0.95,
+        1.05
+      ],
+      "rotation_degrees": 10,
+      "brightness": 0.1,
+      "contrast": 0.1
+    }
+  },
+  "per_model": {
+    "in_channels": 3,
+    "normalize": "imagenet",
+    "pretrained": true
+  }
+}

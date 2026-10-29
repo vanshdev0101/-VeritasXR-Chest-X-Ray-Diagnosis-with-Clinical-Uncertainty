@@ -37,6 +37,29 @@ def thin(xs, ys, n=MAX_CURVE_POINTS):
     return [[round(float(xs[i]), 4), round(float(ys[i]), 4)] for i in idx]
 
 
+def paired_diff(y, a, b, fn, n=2000, seed=0):
+    """Bootstrap the difference between two models on the SAME resampled cases.
+
+    Comparing two marginal confidence intervals and checking whether they
+    overlap is a weaker and misleading test: intervals can overlap while the
+    paired difference is clearly non-zero, because resampling the same cases
+    for both models cancels the shared difficulty of those cases.
+    """
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(y), size=(n, len(y)))
+    d = np.empty(n)
+    for i in range(n):
+        yi = y[idx[i]]
+        d[i] = (fn(yi, a[idx[i]]) - fn(yi, b[idx[i]])
+                if yi.min() != yi.max() else np.nan)
+    d = d[~np.isnan(d)]
+    lo, hi = np.percentile(d, [2.5, 97.5])
+    return {"diff": round(float(d.mean()), 4),
+            "ci": [round(float(lo), 4), round(float(hi), 4)],
+            "p": round(float(2 * min((d <= 0).mean(), (d >= 0).mean())), 4),
+            "separated": bool(lo > 0 or hi < 0)}
+
+
 def bootstrap_ci(y, s, fn, n=2000, seed=0):
     """Percentile bootstrap over the test set; the reason scores are saved."""
     rng = np.random.default_rng(seed)
@@ -119,6 +142,7 @@ def main():
             entry["ci"] = {
                 "auprc": bootstrap_ci(y, s, average_precision_score, args.bootstrap),
             }
+            entry["_scores"] = (y, s)
             # Risk-coverage: accuracy over the most confident x% of cases.
             conf = np.abs(s - 0.5)
             order = np.argsort(-conf)
@@ -132,6 +156,19 @@ def main():
         (ablations if is_abl else models).append(entry)
 
     models.sort(key=lambda m: -m["metrics"]["auprc"]["mean"])
+
+    # Paired significance against the custom model, which is the comparison the
+    # study is actually making.
+    ref = next((m for m in models if m["id"] == "veritasxr"), None)
+    if ref is not None and "_scores" in ref:
+        yr, sr = ref["_scores"]
+        for m in models:
+            if m is ref or "_scores" not in m:
+                continue
+            m["vs_veritasxr"] = paired_diff(yr, m["_scores"][1], sr,
+                                            average_precision_score, args.bootstrap)
+    for m in models + ablations:
+        m.pop("_scores", None)
     test_n = models[0]["confusion"]
     pos = test_n["tp"] + test_n["fn"]
     total = sum(test_n.values())

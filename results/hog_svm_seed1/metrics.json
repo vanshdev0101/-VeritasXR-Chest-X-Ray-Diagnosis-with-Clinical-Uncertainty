@@ -1,0 +1,70 @@
+{
+  "model": "hog_svm",
+  "seed": 1,
+  "kind": "classical",
+  "params_total": 6085,
+  "params_trainable": 6085,
+  "feature_dim": 6084,
+  "epochs_run": null,
+  "best_epoch": null,
+  "best_val_auprc": 0.40005555510925583,
+  "feature_seconds": 63.1,
+  "train_seconds": 102.0,
+  "history": [],
+  "test": {
+    "auroc": 0.7278707884235919,
+    "auprc": 0.3810579301481429,
+    "f1": 0.5373260227752004,
+    "balanced_accuracy": 0.7188105034637647,
+    "sensitivity": 0.7054263565891473,
+    "specificity": 0.7321946503383822,
+    "accuracy": 0.7261607588617074,
+    "threshold": 0.5,
+    "confusion": {
+      "tn": 2272,
+      "fp": 831,
+      "fn": 266,
+      "tp": 637
+    },
+    "n": 4006,
+    "positives": 903
+  },
+  "device": "cpu",
+  "config": {
+    "data": {
+      "root": "data/processed",
+      "train": "train.csv",
+      "val": "val.csv",
+      "test": "test.csv",
+      "image_size": 224
+    },
+    "train": {
+      "max_epochs": 30,
+      "batch_size": 32,
+      "optimizer": "adamw",
+      "lr": 0.0003,
+      "weight_decay": 0.0001,
+      "scheduler": "cosine",
+      "warmup_epochs": 1,
+      "amp_dtype": "bfloat16",
+      "num_workers": 8,
+      "early_stop_patience": 5,
+      "select_metric": "val_auprc",
+      "class_weighting": "balanced",
+      "aux_loss_weight": 0.3
+    }
+  },
+  "per_model": {
+    "in_channels": 1,
+    "normalize": "none",
+    "kind": "classical"
+  },
+  "solver": "SGDClassifier(loss=hinge, average=True)",
+  "solver_note": "liblinear/LinearSVC did not scale to 6,084 dense features: >30 min single-threaded, 6 GB resident, 2 GB swapped. Same objective, different optimiser.",
+  "deviations": [
+    "no epochs, learning rate or schedule: not defined for an SVM",
+    "fitted by averaged SGD, not liblinear, for tractability",
+    "no augmentation: HOG descriptors are precomputed once per image",
+    "scores are a sigmoid of the SVM margin, monotone so ranking is unaffected"
+  ]
+}
