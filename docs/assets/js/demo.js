@@ -5,7 +5,11 @@
  * A silent mismatch produces confident nonsense, so scripts/check_web_parity.py
  * asserts Python and this pipeline agree on the same image before release.
  */
-const MODEL_URL = 'model/veritasxr.onnx';
+// Versioned so a cached model can never be paired with newer code. The two
+// must agree on output names; a stale 16.9 MB model behind fresh JavaScript
+// fails silently rather than loudly, which is the worst way for it to fail.
+const MODEL_VERSION = '225927f';
+const MODEL_URL = `model/veritasxr.onnx?v=${MODEL_VERSION}`;
 const SIZE = 224;
 const CLASSES = ['NORMAL', 'PNEUMONIA'];
 
