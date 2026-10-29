@@ -22,7 +22,8 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from src.evaluation.localisation import (GradCAM, cam_iou, mass_in_box,  # noqa: E402
-                                         peak_in_box, summarise, veritasxr_cams)
+                                         peak_in_box, summarise, veritasxr_cams,
+                                         veritasxr_merged_cam)
 from src.models.registry import NORMALIZE, build_model  # noqa: E402
 from src.models.veritasxr import get_model  # noqa: E402
 
@@ -71,6 +72,8 @@ def main():
     ap.add_argument("--out", type=Path, default=Path("docs/data/localisation.json"))
     ap.add_argument("-n", type=int, default=0, help="limit images (0 = all positives)")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--force", action="store_true",
+                    help="allow a partial run to overwrite the published file")
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2],
                     help="localisation is as seed-sensitive as accuracy; a "
                          "single seed misled this study once already")
@@ -105,7 +108,9 @@ def main():
             x = load_image(args.data / row.path, 1, mean, std).to(dev)
             cams = veritasxr_cams(vx, x)
             cl, cg = cams["local"][0], cams["global"][0]
-            merged = (cl - cl.min()) / (np.ptp(cl) or 1) + (cg - cg.min()) / (np.ptp(cg) or 1)
+            # Weighted by the model's own per-input gate rather than blended
+            # equally, so "merged" reports what the model actually combines.
+            merged = veritasxr_merged_cam(vx, x, cams)
             for key, cam in (("local", cl), ("global", cg), ("merged", merged)):
                 rec[f"{key}_point"].append(peak_in_box(cam, boxes))
                 rec[f"{key}_mass"].append(mass_in_box(cam, boxes))
@@ -166,6 +171,18 @@ def main():
                           "n": len(hits)}
     print(f"  chance      random point in box {results['_chance']['random_point_in_box']:.3f}")
 
+    # A reduced run must not overwrite the published file. A 120-image,
+    # single-seed sanity check silently replaced the full multi-seed results
+    # once; the numbers looked plausible, which is what made it dangerous.
+    full_run = (args.n == 0 and sorted(args.seeds) == [0, 1, 2])
+    if not full_run and args.out == Path("docs/data/localisation.json") and not args.force:
+        alt = Path("audit/localisation_partial.json")
+        alt.parent.mkdir(parents=True, exist_ok=True)
+        alt.write_text(json.dumps(results, indent=1))
+        print(f"\n  partial run (n={args.n or 'all'}, seeds={args.seeds}):"
+              f" wrote {alt} instead of the published file."
+              f"\n  pass --force to overwrite docs/data/localisation.json.")
+        return
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(results, indent=1))
     print(f"\n  wrote {args.out}")

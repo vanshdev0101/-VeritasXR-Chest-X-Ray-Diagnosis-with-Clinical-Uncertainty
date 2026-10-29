@@ -1,0 +1,179 @@
+{
+ "veritasxr": {
+  "local_point": {
+   "mean": 0.1,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.1
+   ],
+   "seeds": 1
+  },
+  "local_mass": {
+   "mean": 0.1291,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.1291
+   ],
+   "seeds": 1
+  },
+  "local_iou": {
+   "mean": 0.1245,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.1245
+   ],
+   "seeds": 1
+  },
+  "global_point": {
+   "mean": 0.15,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.15
+   ],
+   "seeds": 1
+  },
+  "global_mass": {
+   "mean": 0.1271,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.1271
+   ],
+   "seeds": 1
+  },
+  "global_iou": {
+   "mean": 0.1111,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.1111
+   ],
+   "seeds": 1
+  },
+  "merged_point": {
+   "mean": 0.2,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.2
+   ],
+   "seeds": 1
+  },
+  "merged_mass": {
+   "mean": 0.1288,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.1288
+   ],
+   "seeds": 1
+  },
+  "merged_iou": {
+   "mean": 0.1172,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.1172
+   ],
+   "seeds": 1
+  },
+  "pathway_peak_agreement": {
+   "mean": 0.05,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.05
+   ],
+   "seeds": 1
+  },
+  "seeds": [
+   0
+  ]
+ },
+ "resnet50": {
+  "point": {
+   "mean": 0.25,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.25
+   ],
+   "seeds": 1
+  },
+  "mass": {
+   "mean": 0.158,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.158
+   ],
+   "seeds": 1
+  },
+  "iou": {
+   "mean": 0.1052,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.1052
+   ],
+   "seeds": 1
+  },
+  "seeds": [
+   0
+  ]
+ },
+ "densenet121": {
+  "point": {
+   "mean": 0.25,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.25
+   ],
+   "seeds": 1
+  },
+  "mass": {
+   "mean": 0.1702,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.1702
+   ],
+   "seeds": 1
+  },
+  "iou": {
+   "mean": 0.1717,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.1717
+   ],
+   "seeds": 1
+  },
+  "seeds": [
+   0
+  ]
+ },
+ "efficientnet_b0": {
+  "point": {
+   "mean": 0.65,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.65
+   ],
+   "seeds": 1
+  },
+  "mass": {
+   "mean": 0.2463,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.2463
+   ],
+   "seeds": 1
+  },
+  "iou": {
+   "mean": 0.2177,
+   "seed_std": 0.0,
+   "per_seed": [
+    0.2177
+   ],
+   "seeds": 1
+  },
+  "seeds": [
+   0
+  ]
+ },
+ "_chance": {
+  "random_point_in_box": 0.1,
+  "mean_box_area_fraction": 0.1104,
+  "n": 20
+ }
+}

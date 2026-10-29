@@ -102,6 +102,43 @@ class GradCAM:
         return cam.cpu().numpy()
 
 
+def veritasxr_merged_cam(model, x, cams):
+    """Spatial map weighted by the model's own merge gate, not an equal blend.
+
+    The classifier sees w0 * local + w1 * global over pooled features, with w
+    predicted per image. An equal-weight sum of the two normalised maps is a
+    different object and would misreport what the model actually combines, so
+    the gate weights are read from the model for this input.
+
+    The classifier itself is two linear layers deep, so CAM is not exact for it
+    the way it is for the single-layer pathway heads. This is the faithful
+    spatial analogue of the merge, not a map of the classifier's decision.
+    """
+    import torch.nn.functional as F
+    with torch.no_grad():
+        feat = model.stem(x)
+        pooled = [model.paths[n](feat).mean((2, 3)) for n in model.path_names]
+        if len(pooled) == 1 or model.merge_mode == "concat":
+            w = None
+        elif model.merge_mode == "gate":
+            w = F.softmax(model.gate(torch.cat(pooled, dim=1)), dim=1)[0]
+        elif model.merge_mode == "scalar":
+            w = F.softmax(model.path_weights, dim=0)
+        else:
+            w = torch.full((len(pooled),), 1.0 / len(pooled), device=x.device)
+    names = list(model.path_names)
+    if w is None:
+        w = [1.0 / len(names)] * len(names)
+    else:
+        w = [float(v) for v in w]
+    out = None
+    for wi, n in zip(w, names):
+        c = cams[n][0]
+        c = (c - c.min()) / (np.ptp(c) or 1)
+        out = wi * c if out is None else out + wi * c
+    return out
+
+
 def veritasxr_cams(model, x):
     """Per-pathway CAM for the positive class. Forward pass only.
 
