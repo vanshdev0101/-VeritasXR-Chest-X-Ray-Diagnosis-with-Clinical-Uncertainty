@@ -5,11 +5,16 @@ Static, no build step, no backend. Served from this directory by GitHub Pages.
     index.html      live demo - the model runs in the browser via onnxruntime-web
     results.html    comparative study, charts generated from the run artifacts
     data/           summary.json, written by scripts/export_web_data.py
-    model/          veritasxr.onnx - not published yet
+    model/          veritasxr.onnx - 16.9 MB, exported from models/veritasxr_seed0.pt
 
 Regenerate the data after new runs:
 
     python scripts/export_web_data.py
+
+Re-export the demo model after retraining, and verify it before shipping:
+
+    python scripts/export_onnx.py --checkpoint models/veritasxr_seed0.pt
+    python scripts/check_onnx_parity.py
 
 Preview locally. Use an absolute path: `--directory docs` resolves against the
 current shell, and http.server does not complain about a missing directory --

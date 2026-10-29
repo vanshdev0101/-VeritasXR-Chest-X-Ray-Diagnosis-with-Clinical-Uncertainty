@@ -9,3 +9,8 @@ scikit-learn
 matplotlib
 tqdm
 pyyaml
+
+# Exporting the browser demo model (not needed for training)
+onnx
+onnxscript
+onnxruntime

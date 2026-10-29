@@ -67,10 +67,12 @@
           <button class="btn btn-primary" id="browse" type="button">Choose a file</button>
           <input type="file" id="file" accept="image/png,image/jpeg" class="visually-hidden">
         </div>
-        <div class="chart-actions">
-          <button class="btn" id="sample-pos" type="button">Load sample · opacity</button>
-          <button class="btn" id="sample-neg" type="button">Load sample · normal</button>
-        </div>
+        <p class="hint" style="margin-top:var(--space-3)">
+          No sample images are bundled: the test set is patient radiographs, and
+          redistributing them from this site is a decision for the dataset's
+          terms rather than a convenience. Any frontal chest radiograph works —
+          the RSNA dataset is on Kaggle.
+        </p>
       </div>
       <figure class="card" style="margin:0">
         <h3>Input as the model sees it</h3>

@@ -174,11 +174,4 @@ const drop = $('drop');
 }));
 drop.addEventListener('drop', (e) => handleFile(e.dataTransfer.files[0]));
 
-['sample-pos', 'sample-neg'].forEach((id) => $(id).addEventListener('click', () => {
-  const img = new Image();
-  img.onload = () => predict(img);
-  img.onerror = () => alert('Sample images are not bundled yet.');
-  img.src = `samples/${id === 'sample-pos' ? 'opacity' : 'normal'}.png`;
-}));
-
 loadModel();
