@@ -115,9 +115,21 @@ function drawCam(canvasId, cam, h, w) {
 }
 
 /* ---------- run ---------- */
-function softmax(a) {
-  const m = Math.max(...a), e = a.map((v) => Math.exp(v - m)), s = e.reduce((p, c) => p + c, 0);
-  return e.map((v) => v / s);
+// The exported graph already applies softmax, so `verdict` carries
+// probabilities. Applying softmax again here compressed every displayed
+// confidence toward 50% -- a case scored at 0.9999 NORMAL was shown as 0.73 --
+// while leaving the label correct, because softmax is monotone. The label
+// being right is what let it go unnoticed.
+function readProbs(t) {
+  const p = Array.from(t.data, Number);
+  const sum = p.reduce((a, b) => a + b, 0);
+  if (!(Math.abs(sum - 1) < 1e-3) || p.some((v) => v < 0 || v > 1)) {
+    console.warn('[VeritasXR] verdict output is not a probability vector', p);
+    const m = Math.max(...p), e = p.map((v) => Math.exp(v - m));
+    const s = e.reduce((a, b) => a + b, 0);
+    return e.map((v) => v / s);
+  }
+  return p;
 }
 
 async function predict(img) {
@@ -131,7 +143,7 @@ async function predict(img) {
   const names = Object.keys(res);
   const get = (want) => res[names.find((n) => n.toLowerCase().includes(want))];
   const verdict = get('verdict') || res[names[0]];
-  const p = softmax(Array.from(verdict.data));
+  const p = readProbs(verdict);
   const idx = p[1] >= p[0] ? 1 : 0;
 
   $('verdict').textContent = CLASSES[idx];

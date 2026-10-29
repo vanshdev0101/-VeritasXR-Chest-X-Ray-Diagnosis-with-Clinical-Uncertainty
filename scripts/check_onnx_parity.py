@@ -74,7 +74,20 @@ def main():
     print(f"  max  |Δ CAM|             {dcam:.3e}   (tolerance {TOL_CAM:.0e})")
     print(f"  label disagreements      {disagree} / {n}")
 
-    ok = dmax < TOL_PROB and du < TOL_PROB and dcam < TOL_CAM and disagree == 0
+    # The page reads `verdict` as probabilities. If the export ever emits raw
+    # logits instead, the labels stay correct -- softmax is monotone -- and only
+    # the displayed confidence silently goes wrong, which is how a double
+    # softmax survived unnoticed here once. Assert the contract.
+    x = preprocess(args.data / df.iloc[0].path)
+    v = sess.run(None, {"input": x})[0][0]
+    sums_to_one = abs(float(v.sum()) - 1.0) < 1e-3
+    in_range = bool((v >= 0).all() and (v <= 1).all())
+    print(f"  verdict is a probability vector: sum={float(v.sum()):.6f} "
+          f"range=[{float(v.min()):.4f}, {float(v.max()):.4f}] "
+          f"-> {'OK' if sums_to_one and in_range else 'FAIL'}")
+
+    ok = (dmax < TOL_PROB and du < TOL_PROB and dcam < TOL_CAM
+          and disagree == 0 and sums_to_one and in_range)
     print("\n  PASS: ONNX reproduces PyTorch" if ok else "\n  FAIL: export diverges")
     sys.exit(0 if ok else 1)
 
