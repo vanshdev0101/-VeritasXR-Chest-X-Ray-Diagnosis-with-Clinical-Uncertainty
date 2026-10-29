@@ -7,24 +7,10 @@
 <meta name="description" content="Research demo: chest radiograph pneumonia classification with a dual-pathway CNN, running entirely in the browser. Not a medical device.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="favicon.svg">
-<link rel="stylesheet" href="assets/css/app.css?v=225927f">
+<link rel="stylesheet" href="assets/css/app.css?v=ddcb491">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
-
-<div class="disclaimer" role="alert">
-  <div class="wrap">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-      <path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>
-    </svg>
-    <p style="margin:0">
-      <strong>Not a medical device.</strong> This is a student research artifact
-      trained on the RSNA Pneumonia dataset (test AUPRC 0.64). It is not
-      validated for clinical use, must not inform any diagnosis or treatment
-      decision, and its output carries no clinical authority whatsoever.
-    </p>
-  </div>
-</div>
 
 <header class="site">
   <div class="site-inner">
@@ -106,6 +92,15 @@
     </div>
 
     <div class="card" style="margin-top:var(--space-4)">
+      <p class="standing-note">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" aria-hidden="true" style="flex:0 0 auto;margin-top:2px">
+          <path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>
+        </svg>
+        <span><strong>Not a medical device.</strong> Research output. This
+          recommendation has no clinical authority and must not inform any
+          diagnosis or treatment decision.</span>
+      </p>
       <div class="triage" id="triage" data-band="high">
         <svg class="glyph" id="triage-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"></svg>
         <div>
@@ -154,15 +149,6 @@
     </div>
   </section>
 
-  <section>
-    <h2>How this works without a server</h2>
-    <div class="grid grid-3">
-      <div class="card"><h3>ONNX in the browser</h3><p class="hint">The trained model is exported to ONNX and executed by onnxruntime-web compiled to WebAssembly. No inference server, no API, no upload.</p></div>
-      <div class="card"><h3>Gradient-free attribution</h3><p class="hint">onnxruntime-web cannot backpropagate, so Grad-CAM is unavailable. The per-pathway heads are linear on pooled features, which makes plain CAM exact here.</p></div>
-      <div class="card"><h3>Derived, not learned</h3><p class="hint">The uncertainty score has no parameters of its own. It is computed from two independently supervised pathway heads, so there is no part of it that can go untrained while still producing confident-looking numbers.</p></div>
-    </div>
-  </section>
-
 </div></main>
 
 <footer class="site"><div class="wrap">
@@ -172,6 +158,7 @@
 </div></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.wasm.min.js"></script>
-<script src="assets/js/demo.js?v=225927f"></script>
+<script src="assets/js/disclaimer.js?v=ddcb491"></script>
+<script src="assets/js/demo.js?v=ddcb491"></script>
 </body>
 </html>
