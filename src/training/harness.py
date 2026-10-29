@@ -138,6 +138,20 @@ class Progress:
                  f"{row['val_f1']:.6f}", f"{secs:.1f}", int(is_best)])
 
 
+def tune_threshold(y, s, lo=0.05, hi=0.95, n=91):
+    """Operating point maximising F1 on the validation split.
+
+    Never tuned on test. 0.5 is not a neutral default here: training uses
+    class-weighted loss, so predictions shift, and models that differ in
+    calibration sit at different places on their own distribution at the same
+    raw cut.
+    """
+    from sklearn.metrics import f1_score
+    ts = np.unique(np.round(np.linspace(lo, hi, n), 3))
+    f1s = [f1_score(y, (s >= t).astype(int), zero_division=0) for t in ts]
+    return float(ts[int(np.argmax(f1s))])
+
+
 def make_loaders(cfg, spec, batch_size=None, workers=None):
     root = Path(cfg["data"]["root"])
     bs = batch_size or cfg["train"]["batch_size"]
@@ -284,10 +298,19 @@ def train_deep(name, cfg, seed, device, max_epochs=None, limit_batches=None,
     model.load_state_dict(torch.load(ckpt))
     yt, st = evaluate(model, loaders["test"], device, amp_dtype, limit=limit_batches)
     test = metrics_from(yt, st)
+    # Validation scores are saved too. Threshold-dependent metrics at a fixed
+    # 0.5 compare differently-calibrated models at the same raw cut, which
+    # reversed the F1 ranking in this study; tuning the operating point needs
+    # val scores, and recomputing them later means re-running inference.
+    yv_f, sv_f = evaluate(model, loaders["val"], device, amp_dtype,
+                          limit=limit_batches)
     ids = loaders["test"].dataset.df.patientId.tolist()[:len(yt)]
 
+    tuned = tune_threshold(yv_f, sv_f)
     payload = {
         "model": name, "run": run, "ablation": ablation, "seed": seed, "kind": "deep",
+        "test_at_tuned_threshold": metrics_from(yt, st, threshold=tuned),
+        "tuned_threshold": tuned,
         "params_total": total, "params_trainable": trainable,
         "aux_heads_supervised": supports_aux, "aux_loss_weight": aux_w,
         "lr": lr, "epochs_run": len(history), "best_epoch": best_epoch,

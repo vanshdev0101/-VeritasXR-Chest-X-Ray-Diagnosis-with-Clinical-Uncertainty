@@ -8,7 +8,7 @@
 // Versioned so a cached model can never be paired with newer code. The two
 // must agree on output names; a stale 16.9 MB model behind fresh JavaScript
 // fails silently rather than loudly, which is the worst way for it to fail.
-const MODEL_VERSION = '7ffe95f';
+const MODEL_VERSION = 'b7d6213f';
 const MODEL_URL = `model/veritasxr.onnx?v=${MODEL_VERSION}`;
 const SIZE = 224;
 const CLASSES = ['NORMAL', 'PNEUMONIA'];

@@ -1,37 +1,68 @@
-"""Stamp the site's asset URLs with the current commit.
+"""Stamp the site's asset URLs with a hash of their own contents.
 
 GitHub Pages serves assets with cache-control: max-age=600, so a returning
 visitor can hold a stale script or model for ten minutes. For the stylesheet
 that is cosmetic; for the model it is not. New JavaScript paired with a cached
-older model disagree about output names and the page fails silently -- showing
-a dash where a number should be, with nothing in the console.
+older model disagree about output names and the page fails silently.
 
-Run before committing a site change:
+The version token is a content hash rather than the commit SHA. A commit SHA
+cannot be correct: the stamp has to be written before committing, but the SHA
+is only known after, so the stamped value always lagged by one commit. A
+content hash is known at write time, is stable when nothing changed, and
+changes exactly when the asset does -- which is what the cache needs to know.
 
     python scripts/stamp_assets.py
 """
+import hashlib
 import re
-import subprocess
 from pathlib import Path
 
-sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"],
-                     capture_output=True, text=True, check=True).stdout.strip()
-docs = Path("docs")
-changed = []
+DOCS = Path("docs")
 
-for name in ("index.html", "results.html"):
-    p = docs / name
-    s = p.read_text()
-    out = re.sub(r'(assets/(?:css|js)/[\w.]+)(\?v=[0-9a-f]+)?', rf'\1?v={sha}', s)
-    if out != s:
-        p.write_text(out)
-        changed.append(name)
 
-js = docs / "assets/js/demo.js"
-s = js.read_text()
-out = re.sub(r"const MODEL_VERSION = '[0-9a-f]+';", f"const MODEL_VERSION = '{sha}';", s)
-if out != s:
-    js.write_text(out)
-    changed.append("demo.js")
+def digest(path: Path, n: int = 8) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()[:n]
 
-print(f"stamped {sha}: {', '.join(changed) if changed else 'nothing to change'}")
+
+def main():
+    model = DOCS / "model" / "veritasxr.onnx"
+    versions = {p.as_posix().removeprefix("docs/"): digest(p)
+                for p in DOCS.glob("assets/**/*") if p.suffix in (".css", ".js")}
+
+    changed = []
+    for name in ("index.html", "results.html"):
+        p = DOCS / name
+        if not p.is_file():
+            continue
+        s = orig = p.read_text()
+        for rel, h in versions.items():
+            s = re.sub(rf'({re.escape(rel)})(\?v=[0-9a-f]+)?', rf'\1?v={h}', s)
+        if s != orig:
+            p.write_text(s)
+            changed.append(name)
+
+    if model.is_file():
+        js = DOCS / "assets/js/demo.js"
+        s = orig = js.read_text()
+        s = re.sub(r"const MODEL_VERSION = '[0-9a-f]+';",
+                   f"const MODEL_VERSION = '{digest(model)}';", s)
+        if s != orig:
+            js.write_text(s)
+            changed.append("demo.js (model hash)")
+            # demo.js just changed, so its own stamp in the HTML is now stale.
+            h = digest(js)
+            for name in ("index.html",):
+                p = DOCS / name
+                t = re.sub(r"(assets/js/demo\.js)(\?v=[0-9a-f]+)?", rf"\1?v={h}",
+                           p.read_text())
+                p.write_text(t)
+
+    print(f"stamped by content hash: {', '.join(changed) if changed else 'nothing to change'}")
+    for rel, h in sorted(versions.items()):
+        print(f"  {rel:<28} {h}")
+    if model.is_file():
+        print(f"  {'model/veritasxr.onnx':<28} {digest(model)}")
+
+
+if __name__ == "__main__":
+    main()

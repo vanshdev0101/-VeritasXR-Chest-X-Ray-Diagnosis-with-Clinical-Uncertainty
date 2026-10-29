@@ -103,7 +103,15 @@ class GradCAM:
 
 
 def veritasxr_cams(model, x):
-    """Per-pathway CAM for the positive class. Forward pass only."""
+    """Per-pathway CAM for the positive class. Forward pass only.
+
+    Uses the positive class row of the head, W[1]. For a two-class softmax the
+    discriminative direction is arguably W[1] - W[0], since the decision is the
+    difference of the logits. That alternative was measured over three seeds and
+    300 positive images: the two agree to within the seed-to-seed spread and
+    neither is systematically better (pointing game 0.380/0.187/0.283 for W[1]
+    against 0.327/0.180/0.303 for the difference). The simpler form is kept.
+    """
     with torch.no_grad():
         feat = model.stem(x)
         out = {}

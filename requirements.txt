@@ -6,6 +6,7 @@ pillow
 pydicom
 scikit-image
 scikit-learn
+scipy
 matplotlib
 tqdm
 pyyaml
