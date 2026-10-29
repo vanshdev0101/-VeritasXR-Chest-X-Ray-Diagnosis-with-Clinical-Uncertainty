@@ -1,0 +1,30 @@
+{
+ "veritasxr": {
+  "separated_in": 0,
+  "signs_agree": true
+ },
+ "veritasxr_concat_merge": {
+  "separated_in": 0,
+  "signs_agree": false
+ },
+ "veritasxr_fixed_merge": {
+  "separated_in": 0,
+  "signs_agree": false
+ },
+ "veritasxr_global_only": {
+  "separated_in": 1,
+  "signs_agree": false
+ },
+ "veritasxr_local_only": {
+  "separated_in": 1,
+  "signs_agree": true
+ },
+ "veritasxr_no_se": {
+  "separated_in": 1,
+  "signs_agree": false
+ },
+ "veritasxr_scalar_merge": {
+  "separated_in": 0,
+  "signs_agree": true
+ }
+}

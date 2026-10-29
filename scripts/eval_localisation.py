@@ -47,6 +47,23 @@ def load_image(path, channels, mean, std, size=224):
     return (x - m) / s
 
 
+def across_seeds(per_seed):
+    """Average each metric over seeds, keeping the spread between them.
+
+    The seed-to-seed spread is the number that matters: a single seed reversed
+    the pathway ordering in this study's classification ablation, so a
+    localisation figure from one seed cannot be trusted either.
+    """
+    out = {}
+    for key in per_seed[0]:
+        vals = [s[key]["mean"] for s in per_seed]
+        out[key] = {"mean": round(float(np.mean(vals)), 4),
+                    "seed_std": round(float(np.std(vals)), 4),
+                    "per_seed": [round(float(v), 4) for v in vals],
+                    "seeds": len(vals)}
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", type=Path, default=Path("data/processed"))
@@ -54,6 +71,9 @@ def main():
     ap.add_argument("--out", type=Path, default=Path("docs/data/localisation.json"))
     ap.add_argument("-n", type=int, default=0, help="limit images (0 = all positives)")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2],
+                    help="localisation is as seed-sensitive as accuracy; a "
+                         "single seed misled this study once already")
     args = ap.parse_args()
 
     cfg = yaml.safe_load(args.config.read_text())
@@ -67,55 +87,71 @@ def main():
     results = {}
 
     # ---- VeritasXR: per-pathway CAM, no gradients needed ----
-    vx = get_model()
-    vx.load_state_dict(torch.load("models/veritasxr_seed0.pt", map_location="cpu"))
-    vx.eval().to(dev)
     spec = cfg["per_model"]["veritasxr"]
     mean, std = NORMALIZE[spec["normalize"]]
-    rec = {f"{k}_{m}": [] for k in ("local", "global", "merged")
-           for m in ("point", "mass", "iou")}
-    agree = []
-    for row in df.itertuples(index=False):
-        boxes = json.loads(row.boxes)
-        x = load_image(args.data / row.path, 1, mean, std).to(dev)
-        cams = veritasxr_cams(vx, x)
-        cl, cg = cams["local"][0], cams["global"][0]
-        merged = (cl - cl.min()) / (np.ptp(cl) or 1) + (cg - cg.min()) / (np.ptp(cg) or 1)
-        for key, cam in (("local", cl), ("global", cg), ("merged", merged)):
-            rec[f"{key}_point"].append(peak_in_box(cam, boxes))
-            rec[f"{key}_mass"].append(mass_in_box(cam, boxes))
-            rec[f"{key}_iou"].append(cam_iou(cam, boxes))
-        agree.append(int(np.argmax(cl)) == int(np.argmax(cg)))
-    results["veritasxr"] = summarise(rec)
-    results["veritasxr"]["pathway_peak_agreement"] = {
-        "mean": round(float(np.mean(agree)), 4), "n": len(agree)}
-    print(f"  veritasxr   local point {results['veritasxr']['local_point']['mean']:.3f} | "
-          f"global point {results['veritasxr']['global_point']['mean']:.3f}")
+    per_seed = []
+    for seed in args.seeds:
+        ck = Path(f"models/veritasxr_seed{seed}.pt")
+        if not ck.is_file():
+            continue
+        vx = get_model()
+        vx.load_state_dict(torch.load(ck, map_location="cpu"))
+        vx.eval().to(dev)
+        rec = {f"{k}_{m}": [] for k in ("local", "global", "merged")
+               for m in ("point", "mass", "iou")}
+        agree = []
+        for row in df.itertuples(index=False):
+            boxes = json.loads(row.boxes)
+            x = load_image(args.data / row.path, 1, mean, std).to(dev)
+            cams = veritasxr_cams(vx, x)
+            cl, cg = cams["local"][0], cams["global"][0]
+            merged = (cl - cl.min()) / (np.ptp(cl) or 1) + (cg - cg.min()) / (np.ptp(cg) or 1)
+            for key, cam in (("local", cl), ("global", cg), ("merged", merged)):
+                rec[f"{key}_point"].append(peak_in_box(cam, boxes))
+                rec[f"{key}_mass"].append(mass_in_box(cam, boxes))
+                rec[f"{key}_iou"].append(cam_iou(cam, boxes))
+            agree.append(int(np.argmax(cl)) == int(np.argmax(cg)))
+        s_ = summarise(rec)
+        s_["pathway_peak_agreement"] = {"mean": round(float(np.mean(agree)), 4)}
+        per_seed.append(s_)
+        print(f"  veritasxr seed{seed}  local {s_['local_point']['mean']:.3f} | "
+              f"global {s_['global_point']['mean']:.3f}")
+        del vx
+        torch.cuda.empty_cache()
+    results["veritasxr"] = across_seeds(per_seed)
+    results["veritasxr"]["seeds"] = args.seeds
 
     # ---- baselines: Grad-CAM ----
     for name in ("resnet50", "densenet121", "efficientnet_b0"):
-        ckpt = Path(f"models/{name}_seed0.pt")
-        if not ckpt.is_file():
-            print(f"  {name}: no checkpoint, skipped")
-            continue
         spec = cfg["per_model"][name]
-        m, s = NORMALIZE[spec["normalize"]]
-        model = build_model(name, spec)
-        model.load_state_dict(torch.load(ckpt, map_location="cpu"))
-        model.eval().to(dev)
-        gc = GradCAM(model, GRAD_LAYER[name](model))
-        rec = {"point": [], "mass": [], "iou": []}
-        for row in df.itertuples(index=False):
-            boxes = json.loads(row.boxes)
-            x = load_image(args.data / row.path, 3, m, s).to(dev)
-            cam = gc(x)[0]
-            rec["point"].append(peak_in_box(cam, boxes))
-            rec["mass"].append(mass_in_box(cam, boxes))
-            rec["iou"].append(cam_iou(cam, boxes))
-        results[name] = summarise(rec)
-        print(f"  {name:<16} point {results[name]['point']['mean']:.3f}")
-        del model, gc
-        torch.cuda.empty_cache()
+        m, sd = NORMALIZE[spec["normalize"]]
+        per_seed = []
+        for seed in args.seeds:
+            ckpt = Path(f"models/{name}_seed{seed}.pt")
+            if not ckpt.is_file():
+                continue
+            model = build_model(name, spec)
+            model.load_state_dict(torch.load(ckpt, map_location="cpu"))
+            model.eval().to(dev)
+            gc = GradCAM(model, GRAD_LAYER[name](model))
+            rec = {"point": [], "mass": [], "iou": []}
+            for row in df.itertuples(index=False):
+                boxes = json.loads(row.boxes)
+                x = load_image(args.data / row.path, 3, m, sd).to(dev)
+                cam = gc(x)[0]
+                rec["point"].append(peak_in_box(cam, boxes))
+                rec["mass"].append(mass_in_box(cam, boxes))
+                rec["iou"].append(cam_iou(cam, boxes))
+            per_seed.append(summarise(rec))
+            del model, gc
+            torch.cuda.empty_cache()
+        if not per_seed:
+            print(f"  {name}: no checkpoints, skipped")
+            continue
+        results[name] = across_seeds(per_seed)
+        results[name]["seeds"] = args.seeds
+        print(f"  {name:<16} point {results[name]['point']['mean']:.3f} "
+              f"+/- {results[name]['point']['seed_std']:.3f}")
 
     # ---- chance reference: how often a random point lands in a box ----
     rng = np.random.default_rng(0)

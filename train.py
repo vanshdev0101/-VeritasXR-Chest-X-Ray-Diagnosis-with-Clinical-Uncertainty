@@ -144,6 +144,11 @@ def main():
             for seed in seeds:
                 done += 1
                 label = f"{name}_{variant}" if variant else name
+                # The lr tag has to be part of the skip check, not only of the
+                # output path. Without it --skip-existing matched the shared-rate
+                # run and silently skipped every probe.
+                if getattr(args, "lr", None):
+                    label = f"{label}_lr{args.lr:g}"
                 existing = (Path(cfg["output_dir"]) / f"{label}_seed{seed}"
                             / "metrics.json")
                 if args.skip_existing and existing.is_file():

@@ -68,34 +68,62 @@ used to select a checkpoint; AUPRC is.
 
 ## Ablation
 
-Each variant removes or replaces one component of the custom model. Single
-seed, so deltas are read against VeritasXR's own seed-to-seed standard
-deviation of ±0.0039.
+Each variant removes or replaces one component of the custom model, trained
+across three seeds.
 
-| Variant | Params | AUPRC | Δ vs full | Reading |
+| Variant | Params | AUPRC | Δ vs full | Paired test across seeds |
 |---|---|---|---|---|
-| `full` | 4,215,352 | 0.6426 | — | — |
-| `scalar_merge` | 4,166,008 | 0.6399 | −0.0027 | within noise |
-| `fixed_merge` | 4,166,006 | 0.6392 | −0.0034 | within noise |
-| `concat_merge` | 4,264,310 | 0.6341 | −0.0085 | ~2 std |
-| `no_se` | 4,177,672 | 0.6335 | −0.0091 | ~2 std |
-| `local_only` | **1,008,348** | 0.6300 | −0.0126 | ~3 std |
-| `global_only` | 3,302,108 | 0.6233 | −0.0193 | ~5 std |
+| `concat_merge` | 4,264,310 | 0.6422 ± 0.0060 | +0.0011 | sign flips |
+| `full` | 4,215,352 | 0.6410 ± 0.0039 | — | — |
+| `fixed_merge` | 4,166,006 | 0.6394 ± 0.0017 | −0.0016 | sign flips |
+| `scalar_merge` | 4,166,008 | 0.6360 ± 0.0054 | −0.0051 | consistent, never separated |
+| `no_se` | 4,177,672 | 0.6348 ± 0.0068 | −0.0062 | sign flips |
+| `global_only` | 3,302,108 | 0.6337 ± 0.0081 | −0.0073 | sign flips |
+| **`local_only`** | **1,008,348** | 0.6205 ± 0.0131 | **−0.0205** | **consistent, all 3 seeds** |
 
-Two findings and one negative result:
+Significance is a paired bootstrap on the test set, run separately per seed —
+both models scored on the same resampled cases — rather than a rule of thumb
+over three seed means. Per-seed differences against `full`:
 
-- **The 3x3 pathway outperforms the 7x7 pathway at a third of the cost.**
-  `local_only` beats `global_only` by 0.0067 while using 1.01M parameters
-  against 3.30M. The expensive branch is not carrying its weight.
-- **76% of the model can go for ~2% relative AUPRC.** `local_only` is 0.0126
-  below `full` at 24% of the parameters.
-- **The per-input merge gate is not doing measurable work.** Gate, dataset-wide
-  scalar and fixed 50/50 span 0.0034, which is smaller than the model's own
-  seed-to-seed deviation. On this task the gate is indistinguishable from
-  averaging the two pathways.
+| Variant | seed 0 | seed 1 | seed 2 |
+|---|---|---|---|
+| `local_only` | −0.0124 | −0.0063 | −0.0425 ** |
+| `scalar_merge` | −0.0024 | −0.0070 | −0.0047 |
+| `global_only` | −0.0190 ** | **+0.0076** | −0.0102 |
+| `no_se` | −0.0090 | **+0.0079** | −0.0167 ** |
+| `concat_merge` | −0.0083 | **+0.0081** | +0.0038 |
+| `fixed_merge` | −0.0034 | **+0.0060** | −0.0072 |
 
-Deltas below roughly two standard deviations should not be treated as
-conclusions until the variants are re-run across seeds.
+`**` marks a paired 95% interval excluding zero for that seed.
+
+**Exactly one result survives the seeds.** `local_only` — the variant that
+keeps only the 3x3 branch — is worse than the full model on all three seeds,
+so **removing the 7x7 global pathway reliably costs accuracy**. Its magnitude
+is unstable (−0.0063 to −0.0425) and it separates on only one seed
+individually, so the honest claim is a consistent direction rather than a
+precise effect size.
+
+**Every other component changes sign depending on the seed.** Squeeze-excitation,
+a fixed 50/50 blend and concatenation each help on one seed and hurt on
+another. `global_only` is the sharpest warning: it separates on seed 0 and then
+*reverses* on seed 1. None of these design decisions is doing measurable work
+on this task, and any of them would have looked meaningful from a single run.
+
+`scalar_merge` is consistently slightly below `full` without ever separating,
+which is the weakest possible support for the per-input gate: a hint, not a
+result.
+
+A note on why this is stated so carefully. On seed 0 alone the ordering was the
+opposite — `local_only` scored 0.6300 against `global_only` at 0.6233,
+suggesting the cheap 3x3 branch outperformed the expensive 7x7 one. Across
+three seeds that reverses: seed 0 caught `global_only` at its worst (0.6233
+against 0.6432 and 0.6344) and `local_only` near its best. One seed produced a
+cleaner, more attractive, and wrong story. That is the argument for the seeds,
+and for the per-seed table above rather than an average that hides the flips.
+
+As a code check, `veritasxr_full` and the plain `veritasxr` run differ by
+exactly 0.0000 on every seed, confirming the ablation path and the default path
+construct the same model.
 
 ## Architecture
 
@@ -201,43 +229,44 @@ RSNA ships bounding boxes drawn by board-certified radiologists around the
 opacities they identified, which allows a question the accuracy table cannot
 answer: when a model says pneumonia, is it looking at the right place?
 
-Scored over all 903 positive test images. VeritasXR's pathway heads are linear
-on pooled features, so their maps are plain CAM with no gradients; the
-baselines need Grad-CAM on their final convolutional block. Pointing game asks
-whether the map's peak falls inside a box and has no threshold to tune.
+Scored over all 903 positive test images, **averaged across three seeds** with
+the seed-to-seed spread reported. That spread is not decoration: a single seed
+reversed this study's pathway ordering once already.
 
 | Model / pathway | Pointing game | Mass in box | IoU @ 0.5 |
 |---|---|---|---|
-| **EfficientNet-B0** | **0.7121** | **0.3423** | **0.2754** |
-| ResNet50 | 0.4585 | 0.2281 | 0.1512 |
-| **VeritasXR — local (3x3)** | 0.3654 | 0.1406 | 0.1430 |
-| VeritasXR — merged | 0.3034 | 0.1466 | 0.1534 |
-| DenseNet121 | 0.2990 | 0.2033 | 0.2199 |
-| VeritasXR — global (7x7) | 0.1993 | 0.1427 | 0.1267 |
+| **EfficientNet-B0** | **0.7154 ± 0.0177** | 0.3401 | 0.2731 |
+| ResNet50 | 0.4042 ± **0.1475** | 0.2216 | 0.1549 |
+| DenseNet121 | 0.3178 ± 0.0356 | 0.2062 | 0.2170 |
+| VeritasXR — local (3x3) | 0.2979 ± 0.0619 | 0.1372 | 0.1334 |
+| VeritasXR — merged | 0.2757 ± 0.0252 | 0.1485 | 0.1589 |
+| VeritasXR — global (7x7) | 0.2270 ± 0.0276 | **0.1499** | **0.1545** |
 | *chance (random point)* | *0.1240* | — | — |
 
-The chance figure is a useful sanity check: a random point lands in a box
-12.40% of the time, and the boxes cover 11.73% of the image.
+A random point lands in a box 12.40% of the time and the boxes cover 11.73% of
+the image, so the chance figure is consistent with the annotation density.
 
-**The global pathway is barely localising.** At 0.1993 against a chance floor
-of 0.1240 it is 1.6x chance, while the local pathway is 2.9x. The 3.3M
-parameter branch is not finding the opacity. Taken with the ablation, where it
-also loses on classification while costing 3.3x the parameters, that is two
-independent measurements pointing the same way.
+**The metrics disagree about the pathways, and that is the finding.** The local
+3x3 branch places its single peak inside a box more often (0.2979 against
+0.2270), while the global 7x7 branch concentrates more activation mass inside
+the boxes and overlaps them better (0.1499 and 0.1545 against 0.1372 and
+0.1334). Neither branch dominates. Read with the ablation, where removing the
+global branch is the only change that significantly hurts classification, the
+picture is that the two pathways contribute differently rather than one being
+redundant — which is what the architecture intended, even though the intended
+*benefit* does not materialise.
 
-**The pathways do attend to different regions.** Their peaks coincide on only
-5.09% of images, so the two branches are genuinely not redundant — the
-architectural premise holds. What does not hold is the benefit: the diversity
-is not useful when one branch is substantially worse, and merging the two
-scores below the local pathway alone (0.3034 against 0.3654). Blending in the
-weaker map drags down the better one, which is consistent with `local_only`
-nearly matching `full` in the ablation.
+Their peaks coincide on 7.05% of images, so the branches are genuinely not
+duplicates.
 
 **EfficientNet-B0 is the best localiser as well as the best classifier**, at
-5.7x chance and nearly double the best VeritasXR pathway, while being the
-smallest of the pretrained models. Classification accuracy and localisation
-quality are not the same property and need not travel together, so this is
-worth stating rather than assuming.
+5.8x chance, and it is also the most stable (± 0.0177). Those properties need
+not travel together.
+
+**ResNet50's attention is unstable across seeds.** At ± 0.1475 its pointing
+score ranges from 0.2027 to 0.5515 depending only on the random seed. Its
+classification accuracy is far steadier than that, so a single-seed Grad-CAM
+figure from this model would say more about the seed than the architecture.
 
 ## Dataset
 

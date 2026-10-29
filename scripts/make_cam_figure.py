@@ -49,10 +49,15 @@ def main():
     df = pd.read_csv(args.data / "test.csv")
     df = df[df.target == 1].reset_index(drop=True)
 
-    # Prefer cases the local pathway gets right and the global one does not:
-    # that is the finding, shown rather than asserted.
-    picks = []
+    # Balanced on purpose: half the rows are cases the local pathway gets right
+    # and the global one misses, half the reverse. Showing only the first kind
+    # would illustrate a claim the multi-seed numbers do not support -- neither
+    # pathway dominates, and the metrics disagree about which localises better.
+    want = max(args.rows // 2, 1)
+    local_wins, global_wins = [], []
     for row in df.itertuples(index=False):
+        if len(local_wins) >= want and len(global_wins) >= want:
+            break
         boxes = json.loads(row.boxes)
         with Image.open(args.data / row.path) as im:
             g = np.asarray(im.convert("L").resize((SIZE, SIZE), Image.BILINEAR),
@@ -60,11 +65,16 @@ def main():
         x = torch.from_numpy((g - 0.5) / 0.5)[None, None]
         cams = veritasxr_cams(model, x)
         cl, cg = cams["local"][0], cams["global"][0]
-        if peak_in_box(cl, boxes) and not peak_in_box(cg, boxes):
-            picks.append((row.patientId, g, boxes, up(cl), up(cg)))
-        if len(picks) >= args.rows:
-            break
+        lhit, ghit = peak_in_box(cl, boxes), peak_in_box(cg, boxes)
+        rec = (row.patientId, g, boxes, up(cl), up(cg))
+        if lhit and not ghit and len(local_wins) < want:
+            local_wins.append(rec)
+        elif ghit and not lhit and len(global_wins) < want:
+            global_wins.append(rec)
 
+    picks = local_wins + global_wins
+    tags = (["local hits, global misses"] * len(local_wins)
+            + ["global hits, local misses"] * len(global_wins))
     if not picks:
         sys.exit("no qualifying cases found")
 
@@ -86,11 +96,13 @@ def main():
             ax.set_xticks([]); ax.set_yticks([])
             if r == 0:
                 ax.set_title(titles[c], fontsize=10)
-        axes[r, 0].set_ylabel(pid[:8], fontsize=7)
+        axes[r, 0].set_ylabel(f"{pid[:8]}\n{tags[r]}", fontsize=6)
 
     fig.suptitle("Where each pathway looks, against radiologist annotations\n"
-                 "cyan = radiologist box   ·   green + = attention peak",
-                 fontsize=11)
+                 "cyan = radiologist box   ·   green + = attention peak\n"
+                 "top rows: local hits where global misses   ·   "
+                 "bottom rows: the reverse",
+                 fontsize=10)
     fig.tight_layout(rect=(0, 0, 1, 0.96))
     args.out.parent.mkdir(parents=True, exist_ok=True)
     # 130 dpi produced a 1.1 MB PNG, too heavy for a page that already ships

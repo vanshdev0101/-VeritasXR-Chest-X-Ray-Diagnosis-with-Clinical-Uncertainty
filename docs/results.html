@@ -7,7 +7,7 @@
 <meta name="description" content="Comparative study of five models for chest radiograph pneumonia classification, with bootstrap confidence intervals, training curves and ablations.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="favicon.svg">
-<link rel="stylesheet" href="assets/css/app.css?v=bd5e138">
+<link rel="stylesheet" href="assets/css/app.css?v=7ffe95f">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -161,30 +161,37 @@
       The dataset ships bounding boxes drawn by board-certified radiologists
       around the opacities they identified, which allows a question accuracy
       cannot answer: when a model says pneumonia, is it looking at the right
-      place? Scored over all 903 positive test images. The pointing game asks
-      whether the attention peak falls inside a box — no threshold to tune.
+      place? Scored over all 903 positive test images and averaged across three
+      seeds, with the seed-to-seed spread shown. The pointing game asks whether
+      the attention peak falls inside a box — no threshold to tune.
     </p>
     <div class="card">
       <div class="table-scroll"><table id="loc-table">
-        <caption>Attention against radiologist annotations. VeritasXR uses CAM,
-          which is exact for its linear pathway heads; the baselines use Grad-CAM.</caption>
+        <caption>Attention against radiologist annotations, mean over three seeds.
+          VeritasXR uses CAM, which is exact for its linear pathway heads; the
+          baselines use Grad-CAM.</caption>
       </table></div>
       <p class="hint" id="loc-note" style="max-width:none"></p>
     </div>
     <figure class="card" style="margin:var(--space-4) 0 0">
       <h3>The two pathways do not look at the same thing</h3>
+      <p class="hint" style="max-width:none">Deliberately balanced: the top rows
+        are cases the local pathway gets right and the global one misses, the
+        bottom rows the reverse. Neither pathway dominates, so showing only one
+        direction would illustrate a claim the data does not support.</p>
       <img src="assets/img/localisation.png" alt="Four chest radiographs in three
         columns: the radiograph with cyan radiologist boxes, the local 3x3
         pathway's attention map, and the global 7x7 pathway's attention map. A
-        green cross marks each map's peak. The local pathway's peak falls inside
-        the annotated box; the global pathway's peak falls on the image edge or
-        body margin, outside it." style="width:100%;height:auto;border-radius:var(--radius)">
+        green cross marks each map's peak. In the top two rows the local
+        pathway's peak falls inside the annotated box and the global pathway's
+        does not; in the bottom two rows that is reversed."
+        style="width:100%;height:auto;border-radius:var(--radius)">
       <figcaption style="padding-top:var(--space-3)">
-        Cases where the local pathway's peak lands inside a radiologist box and
-        the global pathway's does not. The global pathway repeatedly settles on
-        the image border and body margin rather than lung tissue — a shortcut
-        its wide receptive field makes available, and a plausible reason it both
-        localises near chance and classifies worse.
+        Where the global pathway misses, it often settles on the image border or
+        body margin rather than lung tissue — a shortcut its wide receptive
+        field makes available. But it misses no more often overall than the
+        local pathway does on other cases, and across seeds the two trade
+        places. The pathways attend differently; neither is simply better.
       </figcaption>
     </figure>
   </section>
@@ -230,7 +237,7 @@
 </div></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="assets/js/disclaimer.js?v=bd5e138"></script>
-<script src="assets/js/results.js?v=bd5e138"></script>
+<script src="assets/js/disclaimer.js?v=7ffe95f"></script>
+<script src="assets/js/results.js?v=7ffe95f"></script>
 </body>
 </html>

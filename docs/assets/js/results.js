@@ -292,13 +292,20 @@ function render(d) {
         '<em>chance — random point</em>', `<em>${f4(chance)}</em>`,
         `<em class="ci">boxes cover ${pct(L._chance.mean_box_area_fraction)}</em>`, '—'] }]));
 
+    const rs = L.resnet50 && L.resnet50.point;
+    const sd = (m) => m && m.seed_std !== undefined ? ` ±${f4(m.seed_std)}` : '';
     $('loc-note').innerHTML =
-      `The global 7x7 pathway scores ${f4(v.global_point.mean)} against a chance floor of
-       ${f4(chance)} — only ${(v.global_point.mean / chance).toFixed(1)}x random, while the
-       local 3x3 pathway reaches ${(v.local_point.mean / chance).toFixed(1)}x. The two
-       pathways' peaks coincide on just ${pct(v.pathway_peak_agreement.mean)} of images, so
-       they genuinely attend to different regions — but the diversity does not pay, and
-       merging them scores below the local pathway alone.`;
+      `The metrics disagree about the two pathways, and that is the result. The local 3x3
+       branch places its peak inside a box more often (${f4(v.local_point.mean)}${sd(v.local_point)}
+       against ${f4(v.global_point.mean)}${sd(v.global_point)}), while the global 7x7 branch
+       puts more activation mass inside the boxes (${f4(v.global_mass.mean)} against
+       ${f4(v.local_mass.mean)}) and overlaps them better. Neither dominates. Their peaks
+       coincide on just ${pct(v.pathway_peak_agreement.mean)} of images, so the branches are
+       genuinely not duplicates.` +
+      (rs && rs.per_seed ? ` Note also that ResNet50's localisation swings from
+       ${f4(Math.min(...rs.per_seed))} to ${f4(Math.max(...rs.per_seed))} on seed alone
+       (±${f4(rs.seed_std)}), so a single-seed Grad-CAM figure from it would describe the
+       seed rather than the architecture.` : '');
   });
 
   /* ---------- ablation ---------- */
@@ -314,7 +321,14 @@ function render(d) {
             ref === null ? '—' : (a.metrics.auprc.mean - ref >= 0 ? '+' : '') + (a.metrics.auprc.mean - ref).toFixed(4)],
         }));
       })());
-    $('abl-pending').textContent = '';
+    $('abl-pending').innerHTML =
+      'Significance is a paired bootstrap per seed, not a rule of thumb over seed means. ' +
+      'Only <code>local_only</code> — the variant keeping just the 3&times;3 branch — is worse ' +
+      'than the full model on all three seeds, so removing the 7&times;7 global pathway ' +
+      'reliably costs accuracy. Every other variant changes sign depending on the seed, ' +
+      'including <code>global_only</code>, which separates on seed 0 and reverses on seed 1. ' +
+      'None of those components is doing measurable work here, and each would have looked ' +
+      'meaningful from a single run.';
   } else {
     $('abl-table').innerHTML = '';
     $('abl-pending').innerHTML =
