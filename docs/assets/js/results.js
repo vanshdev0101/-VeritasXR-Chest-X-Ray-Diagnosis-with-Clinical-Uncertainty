@@ -236,6 +236,38 @@ function render(d) {
       return [m.label, at(0.25), at(0.5), at(1.0)];
     }));
 
+  /* ---------- calibration ---------- */
+  fetch('data/calibration.json').then((r) => r.ok ? r.json() : null).then((C) => {
+    if (!C) return;
+    const order = Object.keys(C).sort((a, b) => C[a].ece - C[b].ece);
+    const name = { veritasxr: 'VeritasXR', efficientnet_b0: 'EfficientNet-B0',
+                   resnet50: 'ResNet50', densenet121: 'DenseNet121',
+                   hog_svm: 'HOG + linear SVM' };
+    table($('cal-table'),
+      ['Model', 'ECE', 'MCE', 'Brier', 'Mean confidence', 'Accuracy', 'Gap'],
+      order.map((k) => {
+        const v = C[k], gap = v.mean_confidence - v.accuracy;
+        return {
+          cls: k === 'veritasxr' ? 'is-ours' : '',
+          cells: [name[k] || k, f4(v.ece), f4(v.mce), f4(v.brier),
+                  f4(v.mean_confidence), f4(v.accuracy),
+                  (gap >= 0 ? '+' : '') + gap.toFixed(4)],
+        };
+      }));
+    const vx = C.veritasxr, next = C[order.find((k) => k !== 'veritasxr')];
+    if (vx && next) {
+      $('cal-note').innerHTML =
+        `VeritasXR's calibration error is ${(next.ece / vx.ece).toFixed(1)}x lower than the
+         next best model: it claims ${pct(vx.mean_confidence)} confidence and delivers
+         ${pct(vx.accuracy)} accuracy. For a model built around uncertainty-aware triage
+         that is the property that matters, and it is the one the pretrained baselines are
+         worst at. Note that ResNet50 still has the best Brier score, which combines
+         calibration with refinement — different metrics favour different models. The
+         HOG + SVM figure is an artifact of squashing an unbounded SVM margin through a
+         logistic, not a property of the classifier.`;
+    }
+  });
+
   /* ---------- localisation ---------- */
   fetch('data/localisation.json').then((r) => r.ok ? r.json() : null).then((L) => {
     if (!L) return;

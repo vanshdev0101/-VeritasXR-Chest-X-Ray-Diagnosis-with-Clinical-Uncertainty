@@ -159,6 +159,42 @@ Disagreement is still computed and exposed, labelled as a measured negative
 result rather than removed, because the negative result is the honest output of
 having tested the design.
 
+## Calibration — are the probabilities believable?
+
+AUPRC only grades ranking. A model can order cases perfectly while being
+systematically overconfident, and that matters here: the triage bands are read
+off the predicted distribution, so inflated probabilities produce inflated
+bands. Measured on the test set with 15 bins.
+
+| Model | ECE | MCE | Brier | Mean confidence | Accuracy | Gap |
+|---|---|---|---|---|---|---|
+| **VeritasXR** | **0.0059** | **0.0084** | 0.1460 | 0.7855 | 0.7818 | **+0.0037** |
+| EfficientNet-B0 | 0.0210 | 0.0426 | 0.1667 | 0.7705 | 0.7519 | +0.0186 |
+| ResNet50 | 0.0711 | 0.1601 | **0.1347** | 0.8774 | 0.8063 | +0.0711 |
+| DenseNet121 | 0.0746 | 0.1742 | 0.1511 | 0.8504 | 0.7803 | +0.0701 |
+| HOG + SVM | 0.2704 | 0.7390 | 0.2702 | 0.9996 | 0.7294 | +0.2702 |
+
+![Reliability diagram](docs/assets/img/calibration.png)
+
+**This is the one measurement VeritasXR wins, and it is not a trivial one.**
+Its expected calibration error is 3.6x lower than the next best model and 12x
+lower than ResNet50. It claims 78.55% confidence and delivers 78.18% accuracy,
+a gap of 0.0037. For a model whose stated purpose is uncertainty-aware triage,
+being believable about its own confidence is the property that matters, and it
+is the one the pretrained baselines are worst at. The plausible reason is that
+it is trained from scratch: the pretrained models carry an ImageNet prior that
+pushes them toward overconfidence on a smaller, harder dataset.
+
+Two caveats, because picking the metric that flatters a result is the easiest
+mistake available here:
+
+- **ResNet50 has the best Brier score** (0.1347) despite the second-worst ECE.
+  Brier combines calibration with refinement, and ResNet50's higher accuracy
+  offsets its overconfidence. Different metrics favour different models.
+- **HOG + SVM's 0.9996 mean confidence is an artifact, not a property of the
+  classifier.** Its scores are a logistic squash of an unbounded SVM margin,
+  which saturates. Its calibration figure describes that mapping, not the model.
+
 ## Localisation — where is each model looking?
 
 RSNA ships bounding boxes drawn by board-certified radiologists around the
