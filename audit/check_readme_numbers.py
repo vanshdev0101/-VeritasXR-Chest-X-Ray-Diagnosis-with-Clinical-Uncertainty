@@ -40,6 +40,30 @@ for label, key in NAME.items():
         problems.append(f"{label} AUPRC: README {nums[0]} vs data "
                         f"{m['metrics']['auprc']['mean']}")
 
+# Uncertainty signals. The demo's triage bands rest on this table, and it
+# shipped from an 800-image single-seed run.
+upath = Path("docs/data/uncertainty.json")
+if upath.is_file():
+    U = json.loads(upath.read_text())
+    checked += 1
+    if len(U.get("seeds", [])) < 3:
+        problems.append(f"uncertainty.json ran on {U.get('seeds')} seeds")
+    checked += 1
+    if U.get("n", 0) < 4000:
+        problems.append(f"uncertainty.json scored only {U.get('n')} images")
+    for key, label in (("entropy", "Predictive entropy of the verdict"),
+                       ("disagreement", "Jensen-Shannon pathway disagreement"),
+                       ("entropy_plus_5x_disagreement", "Entropy + 5x disagreement")):
+        want = U["auroc"][key]
+        row = re.search(rf"\|\s*{re.escape(label)}\s*\|([^\n]*)", readme)
+        if not row:
+            problems.append(f"README uncertainty: no row for {label}")
+            continue
+        nums = [float(x) for x in re.findall(r"0\.\d{4}", row.group(1))]
+        checked += 1
+        if not nums or not near(nums[0], want["mean"]):
+            problems.append(f"{label}: README {nums[:1]} vs data {want['mean']}")
+
 # Paired-significance table, and the cross-check that caught it being
 # single-seed: the paired delta must reconcile with the difference of the two
 # mean AUPRCs in the results table. It did not, for a year of commits, because
@@ -162,7 +186,7 @@ stale = [
     ("intervals overlap", "same wrong inference, other wording"),
     ("uses the disagreement between their predictions as an uncertainty",
      "disagreement was rejected; the model reports predictive entropy"),
-    ("disagreement as an uncertainty estimate", "rejected, AUROC 0.5046"),
+    ("disagreement as an uncertainty estimate", "rejected; AUROC 0.5334, chance"),
     ("0.6426", "seed-0 AUPRC; the three-seed mean is 0.6410"),
     ("0.7009 for the strongest", "seed-0 value; three-seed mean is 0.6993"),
     ("inter-path disagreement", "never implemented in the form claimed"),
@@ -173,6 +197,9 @@ stale = [
     ("3.6x lower than the next best", "seed-0 calibration artifact"),
     ("0.0059", "seed-0 ECE; the three-seed mean is 0.0440"),
     ("claims 78.55%", "seed-0 calibration artifact"),
+    ("0.7563", "800-image single-seed entropy AUROC; full test set gives 0.7747"),
+    ("on 800 test images", "the uncertainty table is the full test set now"),
+    ("auroc 0.76.", "unlabelled single-seed figure"),
 ]
 # Scan the README *and* the site. A scan that covered only the README passed
 # while the demo page's h1 still announced a retracted claim as its headline.
@@ -181,7 +208,7 @@ for q in list(Path("docs").glob("*.html")) + list(Path("docs/assets/js").glob("*
     targets[str(q)] = q.read_text()
 
 site_stale = stale + [
-    ("disagreement as uncertainty", "rejected; AUROC 0.5046 against error"),
+    ("disagreement as uncertainty", "rejected; AUROC 0.5334 against error"),
     ("their disagreement is the uncertainty", "rejected"),
 ]
 # A retraction has to be allowed to name the number it is retracting. Lines

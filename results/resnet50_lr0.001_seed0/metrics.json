@@ -1,0 +1,171 @@
+{
+  "model": "resnet50",
+  "run": "resnet50_lr0.001",
+  "ablation": null,
+  "seed": 0,
+  "kind": "deep",
+  "test_at_tuned_threshold": {
+    "auroc": 0.8472247947811731,
+    "auprc": 0.6256533260253447,
+    "f1": 0.6022099447513812,
+    "balanced_accuracy": 0.7630285984092128,
+    "sensitivity": 0.7242524916943521,
+    "specificity": 0.8018047051240734,
+    "accuracy": 0.7843235147279082,
+    "threshold": 0.49,
+    "confusion": {
+      "tn": 2488,
+      "fp": 615,
+      "fn": 249,
+      "tp": 654
+    },
+    "n": 4006,
+    "positives": 903
+  },
+  "tuned_threshold": 0.49,
+  "params_total": 23512130,
+  "params_trainable": 23512130,
+  "aux_heads_supervised": false,
+  "aux_loss_weight": 0.3,
+  "lr": 0.001,
+  "epochs_run": 9,
+  "best_epoch": 4,
+  "best_val_auprc": 0.6491018728710963,
+  "train_seconds": 648.6,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.5513405602291149,
+      "lr": 0.001,
+      "val_auprc": 0.6078360353852686,
+      "val_auroc": 0.830434821524471,
+      "val_f1": 0.5720640569395018
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.5004858471721564,
+      "lr": 0.0009972609476841367,
+      "val_auprc": 0.6213311597350782,
+      "val_auroc": 0.8508565751315743,
+      "val_f1": 0.6057030481809242
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.4957784747075462,
+      "lr": 0.0009890738003669028,
+      "val_auprc": 0.5523982070013195,
+      "val_auroc": 0.8259970999964198,
+      "val_f1": 0.5498090940645609
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.4855290838161014,
+      "lr": 0.0009755282581475768,
+      "val_auprc": 0.6491018728710963,
+      "val_auroc": 0.8584587018008665,
+      "val_f1": 0.6179245283018868
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.4793473174396142,
+      "lr": 0.0009567727288213003,
+      "val_auprc": 0.6317163265970919,
+      "val_auroc": 0.8558134331030038,
+      "val_f1": 0.5819250551065394
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.47445823027277895,
+      "lr": 0.0009330127018922195,
+      "val_auprc": 0.6297841061729645,
+      "val_auroc": 0.8593804375067129,
+      "val_f1": 0.5843681519357194
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.46864756006319364,
+      "lr": 0.0009045084971874739,
+      "val_auprc": 0.6290400915850561,
+      "val_auroc": 0.8645059253159573,
+      "val_f1": 0.5738219895287958
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.4674391018076581,
+      "lr": 0.0008715724127386972,
+      "val_auprc": 0.6483012132558104,
+      "val_auroc": 0.8628516701872471,
+      "val_f1": 0.6186844613918017
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.46170399482417884,
+      "lr": 0.0008345653031794292,
+      "val_auprc": 0.6412973516677329,
+      "val_auroc": 0.859574129103863,
+      "val_f1": 0.6037735849056604
+    }
+  ],
+  "test": {
+    "auroc": 0.8472247947811731,
+    "auprc": 0.6256533260253447,
+    "f1": 0.6060889929742389,
+    "balanced_accuracy": 0.7639866609993045,
+    "sensitivity": 0.716500553709856,
+    "specificity": 0.8114727682887528,
+    "accuracy": 0.7900649026460309,
+    "threshold": 0.5,
+    "confusion": {
+      "tn": 2518,
+      "fp": 585,
+      "fn": 256,
+      "tp": 647
+    },
+    "n": 4006,
+    "positives": 903
+  },
+  "device": "NVIDIA GeForce RTX 3070 Ti Laptop GPU",
+  "torch": "2.14.1+cu130",
+  "config": {
+    "data": {
+      "root": "data/processed",
+      "train": "train.csv",
+      "val": "val.csv",
+      "test": "test.csv",
+      "image_size": 224
+    },
+    "train": {
+      "max_epochs": 30,
+      "batch_size": 32,
+      "optimizer": "adamw",
+      "lr": 0.0003,
+      "weight_decay": 0.0001,
+      "scheduler": "cosine",
+      "warmup_epochs": 1,
+      "amp_dtype": "bfloat16",
+      "num_workers": 8,
+      "early_stop_patience": 5,
+      "select_metric": "val_auprc",
+      "class_weighting": "balanced",
+      "aux_loss_weight": 0.3
+    },
+    "augment": {
+      "crop_scale": [
+        0.85,
+        1.0
+      ],
+      "crop_ratio": [
+        0.95,
+        1.05
+      ],
+      "rotation_degrees": 10,
+      "brightness": 0.1,
+      "contrast": 0.1
+    }
+  },
+  "per_model": {
+    "in_channels": 3,
+    "normalize": "imagenet",
+    "pretrained": true
+  }
+}

@@ -12,7 +12,7 @@ on every seed, so the gap is real rather than noise.
 
 It was designed to use the disagreement between its two branches as an
 uncertainty signal. That was implemented, measured, and found not to work:
-against the model's own errors it scores AUROC 0.5046, which is chance. The
+against the model's own errors it scores AUROC 0.5334, which is chance. The
 model reports predictive entropy instead, and the negative result is kept
 rather than quietly dropped — along with two others, since neither the
 per-input merge gate nor squeeze-excitation survives a multi-seed ablation.
@@ -205,32 +205,42 @@ The architecture was designed around a specific idea: run two pathways, and use
 the divergence between their predictions as the uncertainty estimate. The idea
 is implemented, parameter-free, and fully trained. It also does not work.
 
-Measured against whether the model is actually wrong, on 800 test images:
+Measured against whether the model is actually wrong, over the **full test set
+of 4,006 images on all three seeds**. The first version of this table used
+800 images and one seed; it is the table the demo's triage rests on, so it is
+the last place in this study that should be a single draw.
 
 | Signal | AUROC vs. model error |
 |---|---|
-| Jensen-Shannon pathway disagreement | **0.5046** — chance |
-| Predictive entropy of the verdict | **0.7563** |
-| Entropy + 5x disagreement | 0.7471 — *worse* than entropy alone |
+| Predictive entropy of the verdict | **0.7747 ± 0.0103** |
+| Entropy + 5x disagreement | 0.7675 ± 0.0077 — *worse* than entropy alone |
+| Jensen-Shannon pathway disagreement | **0.5334 ± 0.0090** — chance |
 
 Disagreement carries essentially no information about correctness, and adding
-it to a signal that works degrades that signal. The cause is structural rather
-than a bug: both pathway heads are supervised on the same labels with the same
-loss, so they converge toward each other. Across the test set their divergence
-never exceeds 0.111 and its 99th percentile is 0.070, so under the originally
-intended 0.4 / 0.7 thresholds **100% of cases landed in "high confidence"** and
-the triage was decorative.
+it to a signal that works degrades that signal. On the full test set it scores
+0.5334 rather than the 0.5046 the 800-image subset reported — still
+indistinguishable from chance and the conclusion is unchanged, but the subset
+was flattering the negative result rather than the design. The cause is
+structural rather than a bug: both pathway heads are supervised on the same
+labels with the same loss, so they converge toward each other. Their divergence
+never exceeds 0.316 on any seed, so under the originally intended
+0.4 / 0.7 thresholds **100% of cases landed in "high confidence"** and the
+triage was decorative.
 
 The model therefore reports predictive entropy as its uncertainty, with bands
 set at the 60th and 85th percentile of entropy on the validation split.
+**Those cuts belong to one trained model, not to the architecture**: the 60th
+percentile is 0.8271, 0.7473 and 0.6500 on the three seeds. The demo serves
+the seed-0 checkpoint and uses seed 0's cuts.
+
 Selective prediction on that signal behaves as it should:
 
 | Coverage | Accuracy on retained cases |
 |---|---|
-| most confident 25% | 0.975 |
-| most confident 50% | 0.905 |
-| most confident 75% | 0.850 |
-| all cases | 0.776 |
+| most confident 25% | 0.9767 ± 0.0062 |
+| most confident 50% | 0.9221 ± 0.0045 |
+| most confident 75% | 0.8465 ± 0.0081 |
+| all cases | 0.7700 ± 0.0083 |
 
 Disagreement is still computed and exposed, labelled as a measured negative
 result rather than removed, because the negative result is the honest output of

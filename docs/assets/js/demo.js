@@ -22,10 +22,15 @@ const GLYPH = {
 // VALIDATION split, never the test set. Arbitrary round numbers put every case
 // in one band: the original 0.4/0.7 cutoffs left 100% of the test set in "high
 // confidence", which made the triage decorative.
+//
+// They belong to the seed-0 checkpoint this page serves and to no other. The
+// same percentiles on seeds 1 and 2 are 0.7473/0.9619 and 0.65/0.9471, so these
+// cuts are a property of one trained model, not of the architecture.
+// Recomputed by scripts/eval_uncertainty.py into docs/data/uncertainty.json.
 const BANDS = [
-  [0.829, 'high', 'Higher confidence',
+  [0.8271, 'high', 'Higher confidence',
    'Among the most confident ~60% of cases. On validation data this band is right about 90% of the time.'],
-  [0.981, 'moderate', 'Moderate confidence',
+  [0.9789, 'moderate', 'Moderate confidence',
    'The prediction is closer to the decision boundary. Worth a second look.'],
   [Infinity, 'low', 'Low confidence',
    'The model is near-undecided. Treat this prediction as unreliable.'],

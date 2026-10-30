@@ -41,7 +41,7 @@
     <p class="lede">
       The architecture was designed to treat disagreement between those
       branches as its uncertainty signal. Measured against the model's own
-      errors that scores AUROC 0.5046, which is chance, so the model reports
+      errors that scores AUROC 0.5334, which is chance, so the model reports
       predictive entropy instead and shows the disagreement value alongside it
       as a recorded negative result.
     </p>
@@ -89,7 +89,7 @@
         <span class="value" id="unc">—</span>
         <div class="meter" aria-hidden="true"><i id="unc-bar" style="width:0"></i></div>
         <span class="sub">Entropy of the verdict, 0–1. Predicts this model's own
-          errors at AUROC 0.76.</span>
+          errors at AUROC 0.77, averaged over three seeds.</span>
       </div>
       <div class="card stat">
         <span class="label">Inference</span>
@@ -125,8 +125,9 @@
         <strong>Pathway disagreement: <span id="disagree">—</span></strong> —
         reported, but not used. This architecture was designed to treat
         disagreement between its two pathways as the uncertainty signal. Measured
-        against the model's own errors it scores AUROC 0.5046, which is chance,
-        and combining it with entropy makes entropy worse. Both heads are trained
+        against the model's own errors it scores AUROC 0.5334 over the full
+        test set on three seeds, which is chance, and combining it with entropy
+        makes entropy worse (0.7675 against 0.7747). Both heads are trained
         on the same labels with the same loss, so they converge toward each other
         and rarely disagree at all. The number is shown because the negative
         result is part of the finding.
@@ -166,6 +167,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.wasm.min.js"></script>
 <script src="assets/js/disclaimer.js?v=a33d8fe1"></script>
-<script src="assets/js/demo.js?v=98f778b1"></script>
+<script src="assets/js/demo.js?v=4a55f8cc"></script>
 </body>
 </html>

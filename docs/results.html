@@ -52,8 +52,10 @@
   <section>
     <h2>Model comparison</h2>
     <p class="lede">Three seeds per model, reported as mean ± standard
-      deviation, with bootstrap 95% confidence intervals over 2,000 resamples of
-      the test set.</p>
+      deviation. The interval is a bootstrap over 2,000 resamples of the test
+      set, computed per seed and averaged — it is test-set sampling uncertainty
+      for a typical run, which is a different thing from the ± column beside
+      it, and the two should not be read as one number.</p>
     <div class="card">
       <div class="table-scroll"><table id="main-table">
         <caption>Test-set performance. Sorted by AUPRC. VeritasXR highlighted.</caption>
@@ -84,7 +86,9 @@
     <p class="lede">
       PR is the honest view under class imbalance; the dashed line marks the
       prevalence floor a no-skill classifier achieves. Series are distinguished
-      by dash pattern as well as colour.
+      by dash pattern as well as colour. <strong>Curves are seed 0</strong> for
+      every model — the same seed throughout rather than each model's best, but
+      one run, so read the shape and not the last decimal.
     </p>
     <div class="grid grid-2">
       <div class="card">
@@ -106,8 +110,9 @@
 
   <section>
     <h2>Training behaviour</h2>
-    <p class="lede">Validation AUPRC per epoch. Runs stop when it fails to
-      improve for five consecutive epochs, so the lines end at different points.</p>
+    <p class="lede">Validation AUPRC per epoch, seed 0. Runs stop when it fails
+      to improve for five consecutive epochs, so the lines end at different
+      points.</p>
     <div class="card">
       <div class="chart-box"><canvas id="curve-chart"></canvas></div>
       <details class="data-table"><summary>View as table</summary>
@@ -121,7 +126,7 @@
     <p class="lede">
       Accuracy when the model is allowed to abstain: the x-axis is the fraction
       of cases retained, ordered most-confident first. A curve that falls to the
-      right means confidence is informative.
+      right means confidence is informative. Seed 0.
     </p>
     <div class="card">
       <div class="chart-box"><canvas id="rc-chart"></canvas></div>

@@ -185,8 +185,14 @@ def main():
             prec, rec, _ = precision_recall_curve(y, s)
             entry["roc"] = thin(fpr, tpr)
             entry["pr"] = thin(rec, prec)
+            # Averaged over seeds, like the paired test: a CI from one run
+            # beside a three-seed mean invites reading one as the other.
+            cis = [bootstrap_ci(yy, ss, average_precision_score, args.bootstrap)
+                   for yy, ss in entry["_all_scores"].values()]
             entry["ci"] = {
-                "auprc": bootstrap_ci(y, s, average_precision_score, args.bootstrap),
+                "auprc": [round(float(np.mean([c[0] for c in cis])), 4),
+                          round(float(np.mean([c[1] for c in cis])), 4)],
+                "seeds": len(cis),
             }
             entry["_scores"] = (y, s)
             # Risk-coverage: accuracy over the most confident x% of cases.
