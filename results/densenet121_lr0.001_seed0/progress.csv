@@ -1,0 +1,2 @@
+epoch,train_loss,lr,val_auprc,val_auroc,val_f1,seconds,best
+1,0.534449,1.000e-03,0.528230,0.820443,0.524992,82.9,1

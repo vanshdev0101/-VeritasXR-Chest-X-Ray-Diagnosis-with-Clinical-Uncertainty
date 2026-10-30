@@ -2004,7 +2004,8 @@
       ],
       "p": 0.0,
       "separated": true,
-      "seed": 0
+      "seed": 0,
+      "p_holm": 0.0
      },
      {
       "diff": 0.0665,
@@ -2014,7 +2015,8 @@
       ],
       "p": 0.0,
       "separated": true,
-      "seed": 1
+      "seed": 1,
+      "p_holm": 0.0
      },
      {
       "diff": 0.0497,
@@ -2024,10 +2026,14 @@
       ],
       "p": 0.0,
       "separated": true,
-      "seed": 2
+      "seed": 2,
+      "p_holm": 0.0
      }
     ],
-    "seeds": 3
+    "seeds": 3,
+    "family_size": 12,
+    "p_holm": 0.0,
+    "separated_holm": true
    }
   },
   {
@@ -4042,7 +4048,8 @@
       ],
       "p": 0.0,
       "separated": true,
-      "seed": 0
+      "seed": 0,
+      "p_holm": 0.0
      },
      {
       "diff": 0.0532,
@@ -4052,7 +4059,8 @@
       ],
       "p": 0.0,
       "separated": true,
-      "seed": 1
+      "seed": 1,
+      "p_holm": 0.0
      },
      {
       "diff": 0.0449,
@@ -4062,10 +4070,14 @@
       ],
       "p": 0.0,
       "separated": true,
-      "seed": 2
+      "seed": 2,
+      "p_holm": 0.0
      }
     ],
-    "seeds": 3
+    "seeds": 3,
+    "family_size": 12,
+    "p_holm": 0.0,
+    "separated_holm": true
    }
   },
   {
@@ -6128,7 +6140,8 @@
       ],
       "p": 0.0,
       "separated": true,
-      "seed": 0
+      "seed": 0,
+      "p_holm": 0.0
      },
      {
       "diff": 0.0325,
@@ -6138,7 +6151,8 @@
       ],
       "p": 0.004,
       "separated": true,
-      "seed": 1
+      "seed": 1,
+      "p_holm": 0.008
      },
      {
       "diff": 0.0257,
@@ -6148,10 +6162,14 @@
       ],
       "p": 0.014,
       "separated": true,
-      "seed": 2
+      "seed": 2,
+      "p_holm": 0.014
      }
     ],
-    "seeds": 3
+    "seeds": 3,
+    "family_size": 12,
+    "p_holm": 0.014,
+    "separated_holm": true
    }
   },
   {
@@ -8952,7 +8970,8 @@
       ],
       "p": 0.0,
       "separated": true,
-      "seed": 0
+      "seed": 0,
+      "p_holm": 0.0
      },
      {
       "diff": -0.255,
@@ -8962,7 +8981,8 @@
       ],
       "p": 0.0,
       "separated": true,
-      "seed": 1
+      "seed": 1,
+      "p_holm": 0.0
      },
      {
       "diff": -0.2625,
@@ -8972,10 +8992,14 @@
       ],
       "p": 0.0,
       "separated": true,
-      "seed": 2
+      "seed": 2,
+      "p_holm": 0.0
      }
     ],
-    "seeds": 3
+    "seeds": 3,
+    "family_size": 12,
+    "p_holm": 0.0,
+    "separated_holm": true
    }
   }
  ],

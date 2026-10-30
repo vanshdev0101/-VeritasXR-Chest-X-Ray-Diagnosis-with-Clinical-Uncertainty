@@ -43,7 +43,8 @@ are scored on the *same* resampled test cases, so the shared difficulty of
 those cases cancels. **Run independently on each of the three seeds** — the
 version of this table that shipped first was seed 0 only, which is why its
 figures did not reconcile with the mean AUPRC column above. Δ is the mean over
-seeds, and the p column reports the *weakest* seed rather than the best.
+seeds, and the p column reports the *weakest* seed rather than the best, after
+a Holm correction over the whole family of 12 tests.
 
 | Comparison | Δ AUPRC | 95% CI | worst-seed p | Seeds separating |
 |---|---|---|---|---|
@@ -425,11 +426,12 @@ Stated here rather than left for a reader to find.
   stopping and then tunes the operating point. Both uses are legitimate and
   neither touches test, but reusing one split for two selections makes the
   validation figures slightly optimistic as estimates of held-out performance.
-- **Twenty-two paired tests were run** — four in the main comparison and
-  eighteen across the ablation — with no multiple-comparison correction. At a
-  nominal 5% level, roughly one in twenty would separate by chance alone. This
-  is why the ablation is reported by sign consistency across seeds rather than
-  by counting individual separations: a variant that separates on one seed and
+- **Many paired tests were run**, so some would separate by chance at a nominal
+  5% level. The main comparison is now Holm-corrected over its whole family of
+  12 tests (four models × three seeds) and every one of them still separates;
+  the weakest, ResNet50 on its worst seed, is p = 0.014 corrected. The
+  ablation is reported by sign consistency across seeds rather than by counting
+  separations, for the same reason: a variant that separates on one seed and
   reverses on another is exactly what a false positive looks like.
 - **The classical baseline has no tuned operating point.** Its scores are a
   logistic squash of an unbounded SVM margin and saturate near 1, so a threshold
@@ -490,13 +492,22 @@ scripts/
 ├── prepare_rsna.py           DICOM -> PNG cache + patient-wise manifests
 ├── export_web_data.py        run artifacts -> docs/data/summary.json
 ├── eval_thresholds.py        validation-tuned operating points
-├── eval_calibration.py       reliability, ECE, Brier
+├── eval_calibration.py       reliability, ECE, Brier, per seed
+├── eval_temperature.py       does the calibration edge survive one scalar?
+├── eval_uncertainty.py       entropy vs disagreement against model error
 ├── eval_localisation.py      attention vs radiologist boxes
+├── lr_probe.sh, _round2.sh   per-model learning-rate grid
 ├── export_onnx.py            checkpoint -> browser model
 ├── check_onnx_parity.py      ONNX must reproduce PyTorch
+├── make_cam_figure.py        the localisation figure
+├── make_calibration_figure.py  the reliability figure
 └── stamp_assets.py           content-hash cache busting
-audit/                        verification scripts: recompute every published
-                              number from artifacts, scan for retracted claims
+audit/
+├── verify_numbers.py         recompute every headline number from artifacts
+├── check_readme_numbers.py   README and site vs the data files; retracted claims
+├── ablation_significance.py  paired bootstrap per seed over the variants
+├── threshold_check.py        operating-point sensitivity
+└── render_check.mjs          run each page's JS against a stub DOM
 src/
 ├── data/                     manifest-backed dataset
 ├── models/                   architecture and model registry

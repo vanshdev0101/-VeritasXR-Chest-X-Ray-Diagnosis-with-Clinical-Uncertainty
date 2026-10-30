@@ -1,0 +1,187 @@
+{
+  "model": "densenet121",
+  "run": "densenet121_lr0.0001",
+  "ablation": null,
+  "seed": 0,
+  "kind": "deep",
+  "test_at_tuned_threshold": {
+    "auroc": 0.8765526805945305,
+    "auprc": 0.6961409226534688,
+    "f1": 0.6332665330661322,
+    "balanced_accuracy": 0.7756616770324435,
+    "sensitivity": 0.6998892580287929,
+    "specificity": 0.8514340960360941,
+    "accuracy": 0.8172740888666999,
+    "threshold": 0.63,
+    "confusion": {
+      "tn": 2642,
+      "fp": 461,
+      "fn": 271,
+      "tp": 632
+    },
+    "n": 4006,
+    "positives": 903
+  },
+  "tuned_threshold": 0.63,
+  "params_total": 6955906,
+  "params_trainable": 6955906,
+  "aux_heads_supervised": false,
+  "aux_loss_weight": 0.3,
+  "lr": 0.0001,
+  "epochs_run": 11,
+  "best_epoch": 6,
+  "best_val_auprc": 0.6989463054761101,
+  "train_seconds": 898.8,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.48729380175445747,
+      "lr": 0.0001,
+      "val_auprc": 0.6715603860707602,
+      "val_auroc": 0.8745818266442305,
+      "val_f1": 0.6050156739811913
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.44461340596500026,
+      "lr": 9.972609476841367e-05,
+      "val_auprc": 0.6515432291213652,
+      "val_auroc": 0.8685666463785757,
+      "val_f1": 0.6066089693154996
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.42857449954155175,
+      "lr": 9.890738003669029e-05,
+      "val_auprc": 0.6968486223314172,
+      "val_auroc": 0.8830305037413627,
+      "val_f1": 0.6444752658344891
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.4079387789371697,
+      "lr": 9.755282581475769e-05,
+      "val_auprc": 0.6948443306507934,
+      "val_auroc": 0.8847347033761771,
+      "val_f1": 0.6456400742115028
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.379420602965723,
+      "lr": 9.567727288213003e-05,
+      "val_auprc": 0.6932262842599415,
+      "val_auroc": 0.8828445096845798,
+      "val_f1": 0.642967542503864
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.35843988413416095,
+      "lr": 9.330127018922194e-05,
+      "val_auprc": 0.6989463054761101,
+      "val_auroc": 0.8848263578103183,
+      "val_f1": 0.6420631391729658
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.32527757989399225,
+      "lr": 9.045084971874738e-05,
+      "val_auprc": 0.663098691262843,
+      "val_auroc": 0.872694676166267,
+      "val_f1": 0.6234347048300537
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.2951762684929228,
+      "lr": 8.715724127386972e-05,
+      "val_auprc": 0.6924844188709102,
+      "val_auroc": 0.8834864487487022,
+      "val_f1": 0.649746192893401
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.2591723990570722,
+      "lr": 8.345653031794292e-05,
+      "val_auprc": 0.632104557523895,
+      "val_auroc": 0.8585704056424761,
+      "val_f1": 0.6035940803382663
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.21859878369353034,
+      "lr": 7.938926261462366e-05,
+      "val_auprc": 0.6402998307740974,
+      "val_auroc": 0.8655921735705846,
+      "val_f1": 0.6225287356321839
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.1944692412113346,
+      "lr": 7.500000000000001e-05,
+      "val_auprc": 0.6147468843170829,
+      "val_auroc": 0.8427367441194371,
+      "val_f1": 0.5804988662131519
+    }
+  ],
+  "test": {
+    "auroc": 0.8765526805945305,
+    "auprc": 0.6961409226534688,
+    "f1": 0.6292335115864528,
+    "balanced_accuracy": 0.7885988232014958,
+    "sensitivity": 0.7818383167220376,
+    "specificity": 0.7953593296809539,
+    "accuracy": 0.7923115327009486,
+    "threshold": 0.5,
+    "confusion": {
+      "tn": 2468,
+      "fp": 635,
+      "fn": 197,
+      "tp": 706
+    },
+    "n": 4006,
+    "positives": 903
+  },
+  "device": "NVIDIA GeForce RTX 3070 Ti Laptop GPU",
+  "torch": "2.14.1+cu130",
+  "config": {
+    "data": {
+      "root": "data/processed",
+      "train": "train.csv",
+      "val": "val.csv",
+      "test": "test.csv",
+      "image_size": 224
+    },
+    "train": {
+      "max_epochs": 30,
+      "batch_size": 32,
+      "optimizer": "adamw",
+      "lr": 0.0003,
+      "weight_decay": 0.0001,
+      "scheduler": "cosine",
+      "warmup_epochs": 1,
+      "amp_dtype": "bfloat16",
+      "num_workers": 8,
+      "early_stop_patience": 5,
+      "select_metric": "val_auprc",
+      "class_weighting": "balanced",
+      "aux_loss_weight": 0.3
+    },
+    "augment": {
+      "crop_scale": [
+        0.85,
+        1.0
+      ],
+      "crop_ratio": [
+        0.95,
+        1.05
+      ],
+      "rotation_degrees": 10,
+      "brightness": 0.1,
+      "contrast": 0.1
+    }
+  },
+  "per_model": {
+    "in_channels": 3,
+    "normalize": "imagenet",
+    "pretrained": true
+  }
+}

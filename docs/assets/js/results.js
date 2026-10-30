@@ -127,7 +127,7 @@ function render(d) {
   /* ---------- paired significance ---------- */
   const sig = models.filter((m) => m.vs_veritasxr);
   table($('sig-table'),
-    ['Comparison', 'Δ AUPRC', '95% CI', 'Worst-seed p', 'Verdict'],
+    ['Comparison', 'Δ AUPRC', '95% CI', 'Worst-seed p (Holm)', 'Verdict'],
     sig.map((m) => {
       const v = m.vs_veritasxr;
       const sign = v.diff >= 0 ? '+' : '';
@@ -136,8 +136,8 @@ function render(d) {
         `${m.label} − VeritasXR`,
         `${sign}${v.diff.toFixed(4)}`,
         `<span class="ci">[${v.ci[0]}, ${v.ci[1]}]</span>`,
-        v.p < 0.0005 ? '&lt; 0.001' : v.p.toFixed(3),
-        v.separated
+        (v.p_holm ?? v.p) < 0.0005 ? '&lt; 0.001' : (v.p_holm ?? v.p).toFixed(3),
+        (v.separated_holm ?? v.separated)
           ? `<span class="badge">separated on ${n}/${n} seeds</span>`
           : `<span class="badge badge-pending">not separated</span>`,
       ];
@@ -149,8 +149,10 @@ function render(d) {
        of this table did not reconcile with the mean AUPRC column above, which is what gave
        it away. Δ is the mean over seeds and the p column reports the <em>weakest</em> seed.
        The weakest of all ${sig.length * (sig[0].vs_veritasxr.seeds || 1)} tests is
-       ${worst.label} at p = ${worst.vs_veritasxr.p.toFixed(3)}; the rest are below 0.0001.
-       Every pair still separates on every seed.`;
+       ${worst.label} at p = ${(worst.vs_veritasxr.p_holm ?? worst.vs_veritasxr.p).toFixed(3)};
+       the rest are below 0.0001. p values are Holm-corrected over the whole family of
+       ${worst.vs_veritasxr.family_size || sig.length} tests, and every pair still
+       separates on every seed after that correction.`;
   }
 
   /* ---------- PR ---------- */

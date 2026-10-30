@@ -236,6 +236,22 @@ def main():
                 "per_seed": per_seed,
                 "seeds": len(per_seed),
             }
+    # Holm correction over the whole family of paired tests. The README listed
+    # "no correction for multiple comparisons" as a threat to validity; this
+    # measures it instead of leaving it as a caveat. Holm is used rather than
+    # Bonferroni because it is uniformly more powerful and just as valid here.
+    family = [(m, r) for m in models if m.get("vs_veritasxr")
+              for r in m["vs_veritasxr"]["per_seed"]]
+    k = len(family)
+    for rank, (m, r) in enumerate(sorted(family, key=lambda e: e[1]["p"])):
+        r["p_holm"] = round(min(1.0, r["p"] * (k - rank)), 4)
+    for m in models:
+        v = m.get("vs_veritasxr")
+        if v:
+            v["family_size"] = k
+            v["p_holm"] = max(r["p_holm"] for r in v["per_seed"])
+            v["separated_holm"] = all(r["p_holm"] < 0.05 for r in v["per_seed"])
+
     for m in models + ablations:
         m.pop("_scores", None)
         m.pop("_all_scores", None)
