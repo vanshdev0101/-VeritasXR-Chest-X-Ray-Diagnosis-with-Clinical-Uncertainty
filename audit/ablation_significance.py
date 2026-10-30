@@ -36,10 +36,18 @@ def paired(y, a, b, rng):
 
 
 def main():
-    variants = sorted({d.name.rsplit("_seed", 1)[0] for d in R.iterdir()
-                       if d.name.startswith("veritasxr_") and "_seed" in d.name
-                       and (d / "test_scores.npz").is_file()})
-    variants = [v for v in variants if v != "veritasxr_full"]
+    # Select on what the run says it is, not on its directory name. Matching
+    # "veritasxr_*" swept in the learning-rate probe runs and the plain
+    # three-seed model, and compared the reference against itself.
+    variants = set()
+    for d in R.iterdir():
+        f = d / "metrics.json"
+        if not (f.is_file() and (d / "test_scores.npz").is_file()):
+            continue
+        m = json.loads(f.read_text())
+        if m.get("ablation") and m["ablation"] != "full":
+            variants.add(f"{m['model']}_{m['ablation']}")
+    variants = sorted(variants)
 
     print(f"{'variant':<16}" + "".join(f"{'seed'+str(s):>22}" for s in SEEDS)
           + f"{'signs agree':>13}")
@@ -62,6 +70,21 @@ def main():
                    else "mixed" if agree else "SIGN FLIPS")
         print(f"{v.replace('veritasxr_',''):<16}" + "".join(cells) + f"{verdict:>13}")
         out[v] = {"separated_in": sum(seps), "signs_agree": agree}
+    # The ablation path and the default path must construct the same model.
+    # This used to be visible only as an accidental +0.0000 row produced by a
+    # name-matching bug; it is an assertion now.
+    same = []
+    for s in SEEDS:
+        f, g = scores("veritasxr_full", s), scores("veritasxr", s)
+        if f is None or g is None:
+            continue
+        same.append(float(np.abs(f[1] - g[1]).max()))
+    if same:
+        ok = max(same) < 1e-6
+        print(f"\n  veritasxr_full vs veritasxr: max |Δ score| {max(same):.2e}"
+              f"  -> {'identical' if ok else 'DIFFERENT -- the ablation path diverges'}")
+        out["_full_equals_default"] = {"max_abs_diff": max(same), "ok": ok}
+
     print("\n  'sep' = the paired 95% interval excludes zero for that seed.")
     print("  A variant is only reportable as a finding if the sign is stable")
     print("  across seeds; separation on one seed alone is what misled this")

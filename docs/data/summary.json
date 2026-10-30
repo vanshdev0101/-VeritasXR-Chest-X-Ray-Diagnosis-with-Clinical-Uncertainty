@@ -23413,6 +23413,26 @@
   "seed": 0,
   "models": [
    {
+    "model": "densenet121",
+    "label": "DenseNet121",
+    "points": [
+     [
+      0.0001,
+      0.6961
+     ],
+     [
+      0.0003,
+      0.6824
+     ],
+     [
+      0.001,
+      0.6668
+     ]
+    ],
+    "best_lr": 0.0001,
+    "gain": 0.0137
+   },
+   {
     "model": "resnet50",
     "label": "ResNet50",
     "points": [

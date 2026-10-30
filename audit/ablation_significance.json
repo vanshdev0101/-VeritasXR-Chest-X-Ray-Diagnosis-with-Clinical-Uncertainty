@@ -1,8 +1,4 @@
 {
- "veritasxr": {
-  "separated_in": 0,
-  "signs_agree": true
- },
  "veritasxr_concat_merge": {
   "separated_in": 0,
   "signs_agree": false
@@ -26,5 +22,9 @@
  "veritasxr_scalar_merge": {
   "separated_in": 0,
   "signs_agree": true
+ },
+ "_full_equals_default": {
+  "max_abs_diff": 0.0,
+  "ok": true
  }
 }

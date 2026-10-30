@@ -436,24 +436,26 @@ function render(d) {
             (m.gain >= 0 ? '+' : '') + m.gain.toFixed(4)],
         };
       }));
-    const worst = Math.max(...LP.models.map((m) => m.gain));
     const vx = LP.models.find((m) => m.model === 'veritasxr');
+    const top = LP.models[0];
     const gapLo = (() => {
       const r = (d.models || []).filter((m) => m.vs_veritasxr)
-        .map((m) => m.vs_veritasxr.mean ?? m.vs_veritasxr.diff)
+        .map((m) => m.vs_veritasxr.diff)
         .filter((x) => typeof x === 'number' && x > 0);
       return r.length ? Math.min(...r) : null;
     })();
     $('lr-note').innerHTML =
-      `Seed 0, same grid for every model, AUPRC on the test set. No model gains more than
-       <strong>${worst.toFixed(4)}</strong> AUPRC from being given its own learning rate${
-         vx ? `, and VeritasXR gains ${vx.gain.toFixed(4)}` : ''}${
-         gapLo !== null ? ` — against a gap to the nearest baseline of ${gapLo.toFixed(4)}`
-                        : ''}. The shared rate is therefore not what separates these
-       models: it sits within a few thousandths of every model's own optimum, and tuning
-       each one individually would <em>widen</em> the measured gap rather than close it,
-       because the pretrained baselines gain at least as much as the custom model does.
-       This is a confound that was tested and did not hold, not one that was assumed away.`;
+      `Seed 0, the same grid for every model, AUPRC on the test set. The confound is real
+       for one model and it points the wrong way: ${top.label} was genuinely handicapped by
+       the shared rate and gains <strong>${top.gain.toFixed(4)}</strong> at its own${
+         vx ? `, while VeritasXR gains ${vx.gain.toFixed(4)}` : ''}${
+         gapLo !== null ? ` against a gap to the nearest baseline of ${gapLo.toFixed(4)}`
+                        : ''}. Tuning each model individually therefore <em>widens</em> the
+       gap to the custom model rather than closing it, because the baselines have more to
+       gain from it than it does. ResNet50 at 1e&minus;3 is the other half of the picture —
+       it collapses to 0.6257. One shared rate sits at no model's optimum, but it sits
+       inside the stable region for all four, and that is the honest reason to keep it.
+       This is a confound that was tested, not one assumed away.`;
   } else if ($('lr-section')) {
     $('lr-section').hidden = true;
   }

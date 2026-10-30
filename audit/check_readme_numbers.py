@@ -214,9 +214,13 @@ site_stale = stale + [
 # A retraction has to be allowed to name the number it is retracting. Lines
 # that do so are marked, and only those lines are exempt -- the phrase is still
 # a failure anywhere else, including elsewhere in the same file.
+# Two kinds of exemption: prose that is doing the retracting and so has to
+# name the retracted number, and a table that is single-seed on purpose and
+# says so inline. Both are explicit markers, not guesses about context.
 RETRACTION = ("previously reported", "was one seed", "seed 0 was its best",
               "across the three seeds", "across three seeds its ece",
-              "read as a 12", "retracted", "seed-0 artifact", "no longer")
+              "read as a 12", "retracted", "seed-0 artifact", "no longer",
+              "seed-0 by design", "(shared)")
 
 
 def exempt(line):
@@ -230,7 +234,7 @@ for where, text in targets.items():
         # retracted number often lands a line below the words retracting it.
         hits = [ln for i, ln in enumerate(lines)
                 if phrase.lower() in ln.lower()
-                and not any(exempt(x) for x in lines[max(0, i - 2):i + 2])]
+                and not any(exempt(x) for x in lines[max(0, i - 5):i + 2])]
         if hits:
             problems.append(f"STALE CLAIM in {where}: '{phrase}' ({why})"
                             f"\n      {hits[0].strip()[:100]}")

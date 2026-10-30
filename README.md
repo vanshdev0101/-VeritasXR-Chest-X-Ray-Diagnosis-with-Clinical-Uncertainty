@@ -413,6 +413,37 @@ their justification:
   its own results rather than glossed over. It shares the data, the splits, the
   class-weighting and the results contract.
 
+### Was the shared learning rate unfair to anyone?
+
+The shared rate is what makes this a comparison, and it is also the most
+obvious thing to blame for the custom model's deficit — a from-scratch model
+may want a different rate than a fine-tuned one. So it was measured. Every deep
+model retrained at a third of the shared rate and at three times it, seed 0.
+
+| Model | 1e-4 | 3e-4 *(shared)* | 1e-3 | Best − shared |
+|---|---|---|---|---|
+| EfficientNet-B0 | 0.6954 | 0.7009 | **0.7025** | +0.0016 |
+| DenseNet121 | **0.6961** | 0.6824 | 0.6668 | +0.0137 |
+| ResNet50 | **0.6880** | 0.6849 | 0.6257 | +0.0031 |
+| **VeritasXR** | 0.6316 | 0.6426 | **0.6445** | +0.0019 |
+
+**The confound is real for one model and it points the wrong way.**
+DenseNet121 was genuinely handicapped: at its own rate of 1e-4 it gains +0.0137
+AUPRC. VeritasXR gains +0.0019. So tuning each model
+individually *widens* the gap to VeritasXR rather than closing it, because the
+baselines have more to gain from it than the custom model does. That is the
+opposite of the result this probe was run in the hope of finding, which is why
+it is worth reporting.
+
+ResNet50 at 1e-3 is the other half of the picture: it drops to
+0.6257, well below every other configuration in the table.
+A single shared rate does not sit at any model's optimum, but it sits inside
+the stable region for all four, and the published results use it for every
+model including the one it suits least.
+
+The grid is one seed and three rates, and it does not interact with batch size
+or schedule, so it bounds the effect rather than ruling it out.
+
 ### Threats to validity
 
 Stated here rather than left for a reader to find.
@@ -561,7 +592,8 @@ bootstrap intervals and significance tests can be run without retraining.
 ## Limitations
 
 - Single dataset, single task, no external validation cohort.
-- One shared learning rate for every model rather than a per-model sweep.
+- The learning-rate probe is one seed per rate and three rates; it bounds
+  the effect of the shared rate rather than ruling it out.
 - Labels derive from radiologist report review, not confirmed microbiology.
 - Uncertainty is predictive entropy, which is an aleatoric signal; the
   epistemic signal this architecture was built around does not work (above).
