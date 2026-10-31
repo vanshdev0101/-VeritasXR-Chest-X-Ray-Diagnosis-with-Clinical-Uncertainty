@@ -88,20 +88,6 @@
         <p class="hint" id="refused-why" style="margin:var(--space-1) 0 0"></p>
       </div>
     </div>
-    <p class="hint" style="margin-top:var(--space-3)">
-      The classifier cannot refuse an input. Given a photograph it returns a
-      confident NORMAL, because predictive entropy measures distance from the
-      decision boundary and a photograph is nowhere near it: measured on this
-      checkpoint, 4 of 7 ordinary photographs landed in the highest-confidence
-      band and a flat white field was reported as 68% pneumonia. So the refusal
-      happens here instead, on the pixels, before the model runs — a layout
-      check against the mean chest radiograph of the training split
-      (<a href="data/input_gate.json">input_gate.json</a>). It turns away 21 of
-      22 public radiographs of the wrong body part and 11 of 11 photographs, at
-      the cost of refusing 3.8% of genuine chest radiographs. It is a cheap
-      statistic, not a guarantee: passing it is not evidence that an image is a
-      chest radiograph.
-    </p>
   </section>
 
   <section id="out" hidden>
@@ -195,6 +181,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.wasm.min.js"></script>
 <script src="assets/js/disclaimer.js?v=a33d8fe1"></script>
-<script src="assets/js/demo.js?v=9dcbda1c"></script>
+<script src="assets/js/demo.js?v=4b981041"></script>
 </body>
 </html>

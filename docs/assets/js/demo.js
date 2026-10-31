@@ -214,21 +214,18 @@ async function predict(img) {
     const cast = colourCast(img);
     const g = gateStats(tensor.data);
     if (cast > 40) {
-      refuse(`The image carries colour (channel spread ${cast}); every radiograph ` +
-             'this model was trained on is greyscale.');
+      refuse('The image is in colour. Every radiograph this model was trained '
+             + 'on is greyscale.');
       return;
     }
     if (g.contrast < gate.min_contrast) {
-      refuse(`Too little contrast (${g.contrast.toFixed(1)}, the gate needs ` +
-             `${gate.min_contrast}) — a blank or near-blank field.`);
+      refuse('The image is blank, or nearly blank.');
       return;
     }
     if (g.correlation < gate.min_correlation || g.distance > gate.max_distance) {
-      refuse(`The layout does not match a frontal chest radiograph ` +
-             `(correlation ${g.correlation.toFixed(2)} against the required ` +
-             `${gate.min_correlation}, distance ${g.distance.toFixed(2)} against ` +
-             `${gate.max_distance}). A radiograph of another body part, or a ` +
-             'rotated or cropped chest, lands here.');
+      refuse('The layout is not a frontal chest radiograph. A radiograph of '
+             + 'another body part, or a rotated or cropped chest, lands here.');
+      console.info('[VeritasXR] gate', g);
       return;
     }
   }
