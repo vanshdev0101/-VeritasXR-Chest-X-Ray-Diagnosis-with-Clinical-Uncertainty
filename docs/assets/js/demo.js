@@ -11,6 +11,8 @@
 const MODEL_VERSION = 'b7d6213f';
 const MODEL_URL = `model/veritasxr.onnx?v=${MODEL_VERSION}`;
 const SIZE = 224;
+const GATE_URL = 'data/input_gate.json';
+let gate = null;
 const CLASSES = ['NORMAL', 'PNEUMONIA'];
 
 const GLYPH = {
@@ -56,6 +58,7 @@ let session = null;
 async function loadModel() {
   const badge = $('model-badge');
   try {
+    gate = await (await fetch(GATE_URL)).json();
     const head = await fetch(MODEL_URL, { method: 'HEAD' });
     if (!head.ok) throw new Error(`HTTP ${head.status}`);
     badge.textContent = 'loading model…';
@@ -73,6 +76,70 @@ async function loadModel() {
       'preprocessing work; prediction activates once it lands.</span>');
     console.info('[VeritasXR] model unavailable:', err.message);
   }
+}
+
+/* ---------- input gate ---------- */
+// The classifier has no way to say "not my kind of image". Run a photograph
+// through it and it answers NORMAL with high confidence, because entropy
+// measures distance from the decision boundary and a photograph is nowhere
+// near it. So the refusal lives here, ahead of inference, on the pixels.
+//
+// Three checks, each cut at the 2nd percentile of the validation split:
+// contrast (a blank field z-scores to the same vector as a faint one),
+// squared distance from the mean chest layout, and correlation with it.
+// Fitted and measured by scripts/fit_input_gate.py.
+function gateStats(t) {
+  const g = gate.grid, b = SIZE / g, cells = new Float32Array(g * g);
+  for (let y = 0; y < SIZE; y++) {
+    const row = (y / b) | 0;
+    for (let x = 0; x < SIZE; x++) cells[row * g + ((x / b) | 0)] += t[y * SIZE + x];
+  }
+  for (let i = 0; i < cells.length; i++) cells[i] /= b * b;
+
+  let m = 0; for (const v of cells) m += v; m /= cells.length;
+  let s2 = 0; for (const v of cells) s2 += (v - m) ** 2;
+  const sd = Math.sqrt(s2 / cells.length) || 1e-6;
+  const z = Array.from(cells, (v) => (v - m) / sd);
+
+  // The tensor is (grey/255 - 0.5) / 0.5, so a standard deviation in 0-255
+  // units is the tensor's own standard deviation times 127.5.
+  let tm = 0; for (let i = 0; i < t.length; i++) tm += t[i]; tm /= t.length;
+  let tv = 0; for (let i = 0; i < t.length; i++) tv += (t[i] - tm) ** 2;
+  const contrast = Math.sqrt(tv / t.length) * 127.5;
+
+  let dist = 0, dot = 0, nz = 0, nm = 0;
+  for (let i = 0; i < z.length; i++) {
+    dist += ((z[i] - gate.mean[i]) / gate.std[i]) ** 2;
+    dot += z[i] * gate.mean[i];
+    nz += z[i] * z[i];
+    nm += gate.mean[i] * gate.mean[i];
+  }
+  return { contrast, distance: dist / z.length,
+           correlation: dot / (Math.sqrt(nz) * Math.sqrt(nm) + 1e-9) };
+}
+
+// Colour has no counterpart in the training split -- every radiograph there is
+// greyscale -- so this cut is fitted on nothing and is deliberately generous.
+// It exists because a colour photograph is the input a visitor actually tries.
+function colourCast(img) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 32;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, 32, 32);
+  const d = ctx.getImageData(0, 0, 32, 32).data;
+  let worst = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    worst = Math.max(worst, Math.max(d[i], d[i + 1], d[i + 2])
+                          - Math.min(d[i], d[i + 1], d[i + 2]));
+  }
+  return worst;
+}
+
+function refuse(reason) {
+  $('refused-why').textContent = reason;
+  $('refused').hidden = false;
+  $('out').hidden = true;
+  $('cams').hidden = true;
 }
 
 /* ---------- preprocessing ---------- */
@@ -140,6 +207,32 @@ function readProbs(t) {
 async function predict(img) {
   const tensor = toTensor(img);
   if (!session) return;
+
+  // Refuse before inference, never after: a verdict that is shown and then
+  // retracted has already been read.
+  if (gate) {
+    const cast = colourCast(img);
+    const g = gateStats(tensor.data);
+    if (cast > 40) {
+      refuse(`The image carries colour (channel spread ${cast}); every radiograph ` +
+             'this model was trained on is greyscale.');
+      return;
+    }
+    if (g.contrast < gate.min_contrast) {
+      refuse(`Too little contrast (${g.contrast.toFixed(1)}, the gate needs ` +
+             `${gate.min_contrast}) — a blank or near-blank field.`);
+      return;
+    }
+    if (g.correlation < gate.min_correlation || g.distance > gate.max_distance) {
+      refuse(`The layout does not match a frontal chest radiograph ` +
+             `(correlation ${g.correlation.toFixed(2)} against the required ` +
+             `${gate.min_correlation}, distance ${g.distance.toFixed(2)} against ` +
+             `${gate.max_distance}). A radiograph of another body part, or a ` +
+             'rotated or cropped chest, lands here.');
+      return;
+    }
+  }
+  $('refused').hidden = true;
 
   const t0 = performance.now();
   const res = await session.run({ input: tensor });

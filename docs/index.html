@@ -7,7 +7,7 @@
 <meta name="description" content="Research demo: chest radiograph pneumonia classification with a dual-pathway CNN, running entirely in the browser. Not a medical device.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="favicon.svg">
-<link rel="stylesheet" href="assets/css/app.css?v=c79838f4">
+<link rel="stylesheet" href="assets/css/app.css?v=0cf373c9">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -74,6 +74,34 @@
           to the evaluation transform used in training.</figcaption>
       </figure>
     </div>
+  </section>
+
+  <section id="refused" hidden>
+    <h2>2 · Not read</h2>
+    <div class="triage" data-band="refused" role="status">
+      <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>
+      </svg>
+      <div>
+        <strong id="refused-label">This does not look like a chest radiograph</strong>
+        <p class="hint" id="refused-why" style="margin:var(--space-1) 0 0"></p>
+      </div>
+    </div>
+    <p class="hint" style="margin-top:var(--space-3)">
+      The classifier cannot refuse an input. Given a photograph it returns a
+      confident NORMAL, because predictive entropy measures distance from the
+      decision boundary and a photograph is nowhere near it: measured on this
+      checkpoint, 4 of 7 ordinary photographs landed in the highest-confidence
+      band and a flat white field was reported as 68% pneumonia. So the refusal
+      happens here instead, on the pixels, before the model runs — a layout
+      check against the mean chest radiograph of the training split
+      (<a href="data/input_gate.json">input_gate.json</a>). It turns away 21 of
+      22 public radiographs of the wrong body part and 11 of 11 photographs, at
+      the cost of refusing 3.8% of genuine chest radiographs. It is a cheap
+      statistic, not a guarantee: passing it is not evidence that an image is a
+      chest radiograph.
+    </p>
   </section>
 
   <section id="out" hidden>
@@ -167,6 +195,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.wasm.min.js"></script>
 <script src="assets/js/disclaimer.js?v=a33d8fe1"></script>
-<script src="assets/js/demo.js?v=4a55f8cc"></script>
+<script src="assets/js/demo.js?v=9dcbda1c"></script>
 </body>
 </html>

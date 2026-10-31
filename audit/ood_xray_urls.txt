@@ -1,0 +1,35 @@
+# Public radiographs of the wrong body part, used to measure the input gate.
+# Wikimedia Commons, fetched 2026-10-31. Not redistributed here -- the gate is
+# fitted only on the RSNA training split, and these are validation inputs.
+#
+# 22 of these 25 were scored; x9, x17 and x23 were dropped because the body
+# part is not clear from the title. The gate turns away 21 of the 22. The one
+# that passes is a horse hoof (Laminitis radiograph).
+#
+#   python audit/check_gate_parity.py   # Python and the browser agree
+#   python scripts/fit_input_gate.py    # refit and re-measure the probes
+https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3c/Radiograph%3B_foot_of_Leonard_Schuster%2C_aged_six_and_a_half._Wellcome_L0000621EB.jpg/1280px-Radiograph%3B_foot_of_Leonard_Schuster%2C_aged_six_and_a_half._Wellcome_L0000621EB.jpg
+https://thumb.wikimedia.org/wikipedia/commons/thumb/4/40/Knee_plain_X-ray_weight_bearing_flexion.jpg/1280px-Knee_plain_X-ray_weight_bearing_flexion.jpg
+https://thumb.wikimedia.org/wikipedia/commons/thumb/7/76/X-ray_of_the_pelvis_of_a_22_months_old_male_-_Lauenstein.jpg/1280px-X-ray_of_the_pelvis_of_a_22_months_old_male_-_Lauenstein.jpg
+https://thumb.wikimedia.org/wikipedia/commons/thumb/7/79/First_medical_X-ray_by_Wilhelm_R%C3%B6ntgen_of_his_wife_Anna_Bertha_Ludwig%27s_hand_-_18951222.jpg/1280px-First_medical_X-ray_by_Wilhelm_R%C3%B6ntgen_of_his_wife_Anna_Bertha_Ludwig%27s_hand_-_18951222.jpg
+https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7f/Rad_160601_Skull_X-ray_False_color.nevit.jpg/1280px-Rad_160601_Skull_X-ray_False_color.nevit.jpg
+https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9c/X-ray_of_pelvis_with_total_arthroplasty.jpg/1280px-X-ray_of_pelvis_with_total_arthroplasty.jpg
+https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a8/X-ray_of_pelvis_with_idiopathic_avascular_necrosis_of_the_femoral_head.jpg/1280px-X-ray_of_pelvis_with_idiopathic_avascular_necrosis_of_the_femoral_head.jpg
+https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/Bones_of_a_hand._Radiograph%2C_1900-1904._Wellcome_L0026317.jpg/1280px-Bones_of_a_hand._Radiograph%2C_1900-1904._Wellcome_L0026317.jpg
+https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c3/Radiograph_of_Private_John_Gretzer_Jr.jpg/1280px-Radiograph_of_Private_John_Gretzer_Jr.jpg
+https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ef/Knee_plain_X-ray_weight_bearing.jpg/1280px-Knee_plain_X-ray_weight_bearing.jpg
+https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f0/Knee_plain_X-ray.jpg/1280px-Knee_plain_X-ray.jpg
+https://upload.wikimedia.org/wikipedia/commons/0/01/Pelvis_of_Albert_Fish_%28X-ray%29.jpg
+https://upload.wikimedia.org/wikipedia/commons/2/29/Bones_of_the_ankle%2C_and_part_of_the_foot_and_leg._Radiograph_Wellcome_L0026320.jpg
+https://upload.wikimedia.org/wikipedia/commons/4/48/Right_foot_before_surgery_in_a_CT.png
+https://upload.wikimedia.org/wikipedia/commons/5/51/Radiograph_of_human_knee_with_Osgood%E2%80%93Schlatter_disease.png
+https://upload.wikimedia.org/wikipedia/commons/5/59/X-ray_of_the_pelvis_of_a_22_months_old_male_-_anteroposterior.jpg
+https://upload.wikimedia.org/wikipedia/commons/6/65/X-ray_of_ground_glass_density_of_the_skull_by_renal_osteodystrophy.jpg
+https://upload.wikimedia.org/wikipedia/commons/7/70/Laminitis_radiograph_with_annotation.jpg
+https://upload.wikimedia.org/wikipedia/commons/8/8f/Radiograph_of_hand_by_W.K._Roentgen_Wellcome_L0000622EB.jpg
+https://upload.wikimedia.org/wikipedia/commons/9/9f/Hand_radiograph_showing_tumoral_calcinosis.jpg
+https://upload.wikimedia.org/wikipedia/commons/b/b3/Radiograph_with_knee_angles.jpg
+https://upload.wikimedia.org/wikipedia/commons/b/b4/Radiograph%3B_foot_of_a_pantomime_artist._Wellcome_L0000623EB.jpg
+https://upload.wikimedia.org/wikipedia/commons/b/b8/Lateral_projectional_radiograph_scan_of_skull.jpg
+https://upload.wikimedia.org/wikipedia/commons/d/d3/Oblique_hand_radiograph_showing_tumoral_calcinosis.jpg
+https://upload.wikimedia.org/wikipedia/commons/d/da/Caldwell-view-angled-skull-pa-radiograph.jpg

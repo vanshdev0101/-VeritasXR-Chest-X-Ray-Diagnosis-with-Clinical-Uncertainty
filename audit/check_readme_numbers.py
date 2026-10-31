@@ -9,6 +9,7 @@ from pathlib import Path
 S = json.loads(Path("docs/data/summary.json").read_text())
 C = json.loads(Path("docs/data/calibration.json").read_text())
 L = json.loads(Path("docs/data/localisation.json").read_text())
+G = json.loads(Path("docs/data/input_gate.json").read_text())
 readme = Path("README.md").read_text()
 
 NAME = {"EfficientNet-B0": "efficientnet_b0", "DenseNet121": "densenet121",
@@ -238,6 +239,37 @@ for where, text in targets.items():
         if hits:
             problems.append(f"STALE CLAIM in {where}: '{phrase}' ({why})"
                             f"\n      {hits[0].strip()[:100]}")
+
+# input gate: the README's probe table against the fitted gate's own record
+GATE_ROWS = {"chest radiograph rotated 90": "rot90",
+             "quarter crop of a chest radiograph": "quarter_crop",
+             "intensity-inverted chest radiograph": "inverted",
+             "uniform noise": "noise",
+             "flat field": "flat",
+             "half of a chest radiograph": "half"}
+for label, key in GATE_ROWS.items():
+    row = re.search(rf"\|\s*{re.escape(label)}[^|]*\|([^\n]*)\|", readme)
+    if not row:
+        problems.append(f"README gate table: no row for {label}")
+        continue
+    checked += 1
+    want = G["probes"][key]
+    got_pct = float(re.search(r"([\d.]+)%", row.group(1)).group(1))
+    if not near(got_pct, round(100 * want["turned_away"], 1), tol=0.051):
+        problems.append(f"gate {key} turned away: README {got_pct}% vs data "
+                        f"{100 * want['turned_away']:.1f}%")
+    auroc = re.search(r"0\.\d{4}", row.group(1))
+    if auroc and not near(float(auroc.group()), want["auroc_vs_test"]):
+        problems.append(f"gate {key} AUROC: README {auroc.group()} vs data "
+                        f"{want['auroc_vs_test']}")
+checked += 1
+cost = re.search(r"held-out chest radiographs \(the cost\)[^|]*\|[^|]*\|\s*\**([\d.]+)%",
+                 readme)
+if not cost:
+    problems.append("README gate table: no false-reject row")
+elif not near(float(cost.group(1)), round(100 * G["test_reject_rate"], 1), tol=0.051):
+    problems.append(f"gate false-reject: README {cost.group(1)}% vs data "
+                    f"{100 * G['test_reject_rate']:.2f}%")
 
 print(f"  checked {checked} README values against the data files")
 print(f"  problems: {len(problems)}")
