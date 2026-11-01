@@ -39,3 +39,6 @@ Thumbs.db
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Diagram PNGs are rendered from the tracked SVGs by presentation/make_diagrams.py
+/presentation/diagrams/*.png
