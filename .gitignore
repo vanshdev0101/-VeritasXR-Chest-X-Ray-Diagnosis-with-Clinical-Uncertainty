@@ -42,3 +42,6 @@ Thumbs.db
 
 # Diagram PNGs are rendered from the tracked SVGs by presentation/make_diagrams.py
 /presentation/diagrams/*.png
+
+# The results notebook clones the repo into ./repo to read its own artifacts.
+/repo/
